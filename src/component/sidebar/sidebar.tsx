@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function SideBar({ onSelectTab }: { onSelectTab: (id: number) => void }) {
+export default function SideBar({ onSelectTabAction }: { onSelectTabAction: (id: number) => void }) {
     const pathname = usePathname();
 
     const menuItems = [
@@ -47,7 +47,7 @@ export default function SideBar({ onSelectTab }: { onSelectTab: (id: number) => 
     ];
 
     return (
-        <div className="w-64 h-full bg-white shadow-lg">
+        <div className="w-64 h-full bg-white shadow-lg fixed">
             <div className="px-2 mt-4">
                 {menuItems.map((item) => {
                     const isActive = pathname === item.path;
@@ -58,7 +58,7 @@ export default function SideBar({ onSelectTab }: { onSelectTab: (id: number) => 
                             href={item.path}
                             className={`flex items-center gap-3 px-4 py-3 my-1 rounded-md cursor-pointer transition-all duration-300 ${isActive ? "bg-[#5086ed] text-white" : "text-black hover:bg-gray-100"
                                 }`}
-                            onClick={() => onSelectTab(item.id)}
+                            onClick={() => onSelectTabAction(item.id)}
                         >
                             <span className={`${isActive ? "text-white" : "text-gray-600"}`}>
                                 {item.icon}

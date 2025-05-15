@@ -8,11 +8,11 @@ export default function Layout({children}: {children: React.ReactNode}) {
     const [activeTab, setActiveTab] = useState(0);
 
     return (
-        <div className="flex flex-col h-screen text-black">
+        <div className="flex flex-col h-screen text-black overflow-hidden">
             <AppBar />
-            <div className="flex flex-1 pt-16">
-                <SideBar onSelectTab={setActiveTab} />
-                <main className="flex-1 overflow-auto bg-gray-50">
+            <div className="flex flex-1 pt-16 overflow-hidden">
+                <SideBar onSelectTabAction={setActiveTab} />
+                <main className="flex-1 bg-gray-50 ml-64 overflow-auto">
                     {children}
                 </main>
             </div>

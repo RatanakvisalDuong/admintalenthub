@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 
-export default function PortfolioManagementPage() {
+export default function PortfolioManagementComponent() {
     const [selected, setSelected] = useState('Portfolio');
     const [userTypeSelected, setUserTypeSelected] = useState('Student');
 
