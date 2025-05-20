@@ -66,7 +66,7 @@ export default function EmploymentManagementComponent({employmentData, jobTitles
                         </ResponsiveContainer>
                     </div>
                 </div>
-                <div className="bg-white shadow-md rounded-lg w-full ml-4 hover:scale-103 transition-transform duration-300 group">
+                <div className="bg-white shadow-md rounded-lg w-full ml-4 hover:scale-102 transition-transform duration-300 group">
                     <h2 className="text-xl font-semibold text-start mt-4 ml-4 text-gray-900">
                         Top 10 Job Titles in TalentHub
                     </h2>

@@ -1,16 +1,75 @@
 'use client';
 
+import { convertPhoneNumberSpacing } from '@/app/utils';
+import { getMajorName } from '@/dummydata/major';
 import { MagnifyingGlassIcon } from '@heroicons/react/20/solid';
+import '@fortawesome/fontawesome-free/css/all.css';
+import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
-
-export default function PortfolioManagementComponent() {
+export default function PortfolioManagementComponent({ portfolio, project }: { portfolio: any, project: any }) {
     const [selected, setSelected] = useState('Portfolio');
-    const [userTypeSelected, setUserTypeSelected] = useState('Student');
+    const [userTypeSelected, setUserTypeSelected] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filteredProjects, setFilteredProjects] = useState([]);
 
-    const handleChange = (_event: React.ChangeEvent<HTMLInputElement>) => {
-        // onSearch(event.target.value);
+    const filteredPortfolios = useMemo(() => {
+        let result = Array.isArray(portfolio) ? portfolio : [];
+
+        if (searchTerm) {
+            result = result.filter(item =>
+                item.name?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        if (userTypeSelected === 'Student') {
+            result = result.filter(item => item.role === 1);
+        } else if (userTypeSelected === 'Endorser') {
+            result = result.filter(item => item.role === 2);
+        }
+
+        return result;
+    }, [portfolio, searchTerm, userTypeSelected]);
+
+    useEffect(() => {
+        // Filter projects based on search term and user type
+        if (Array.isArray(project)) {
+            const filtered : any = project.filter(item => {
+                const matchesSearch = searchTerm ? item.title.toLowerCase().includes(searchTerm.toLowerCase()) : true;
+                
+                // Apply user type filter if a project has a portfolio_id
+                if (userTypeSelected && item.portfolio_id) {
+                    const owner = getProjectOwner(item.portfolio_id);
+                    if (owner) {
+                        if (userTypeSelected === 'Student' && owner.role !== 1) return false;
+                        if (userTypeSelected === 'Endorser' && owner.role !== 2) return false;
+                    }
+                }
+                
+                return matchesSearch;
+            });
+            setFilteredProjects(filtered);
+        }
+    }, [project, searchTerm, userTypeSelected]);
+    
+    // Find portfolio owner information for a project
+    const getProjectOwner = (portfolioId: any) => {
+        if (!Array.isArray(portfolio)) return null;
+        return portfolio.find(item => item.id === portfolioId);
+    };
+
+    const handleSearch = (value: string) => {
+        setSearchTerm(value);
+    };
+
+    const handleClearFilters = () => {
+        setUserTypeSelected('');
+        setSearchTerm('');
+    };
+
+    const getVisibilityLabel = (status : any) => {
+        return status === 1 ? 'Public' : 'Private';
     };
 
     return (
@@ -20,14 +79,15 @@ export default function PortfolioManagementComponent() {
                 <div className="relative w-full">
                     <input
                         type="text"
-                        placeholder="Search Portfolio..."
-                        className="w-full h-10 rounded-lg pl-4 pr-4 text-gray-500 bg-white shadow-sm"
-                        onChange={handleChange}
+                        placeholder={`Search ${selected}...`}
+                        className="w-full h-10 rounded-lg pl-4 pr-10 text-gray-500 bg-white shadow-sm"
+                        onChange={(e) => handleSearch(e.target.value)}
+                        value={searchTerm}
                     />
                     <MagnifyingGlassIcon className="w-6 h-6 text-gray-500 absolute top-1/2 right-3 transform -translate-y-1/2" />
                 </div>
             </div>
-            <div className='flex mt-4  justify-between'>
+            <div className='flex mt-4 justify-between'>
                 <div className='w-78 h-max bg-white shadow-md rounded-lg p-4'>
                     <div
                         className={`w-full h-10 p-2 cursor-pointer rounded-sm ${selected === 'Portfolio' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
@@ -42,34 +102,147 @@ export default function PortfolioManagementComponent() {
                         Project
                     </div>
                 </div>
-                <div className='w-full'>
-                    <div className='h-12 bg-white shadow-md rounded-lg ml-13'>
-                        <div className='flex justify-start items-center h-full'>
-                            <h1 className='font-bold text-lg ml-4'>
-                                Filter by:
-                            </h1>
-                            <div className={`hover:cursor-pointer p-2 ml-4 rounded-sm ${userTypeSelected === 'Student' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`} onClick={() => setUserTypeSelected('Student')}>
-                                Student
-                            </div>
-                            <div className='w-[1px] h-8 bg-gray-700 mx-4'></div>
-                            <div className={`hover:cursor-pointer  p-2 rounded-sm ${userTypeSelected === 'Endorser' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`} onClick={() => setUserTypeSelected('Endorser')}>
-                                Endorser
-                            </div>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-8 justify-items-end mt-4">
-
-                        {Array.from({ length: 5 }, (_, index) => (
-                            <Link
-                                key={index}
-                                className="w-54 h-64 rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
-                                href={`/portfolio/${index}`}
-                            >
-                                <div className="flex justify-between items-center">
+                <div className='w-full ml-4'>
+                    {selected === 'Portfolio' && (
+                        <>
+                            <div className='h-12 bg-white shadow-md rounded-lg'>
+                                <div className='flex justify-between items-center h-full'>
+                                    <div className="flex items-center">
+                                        <h1 className='font-bold text-lg ml-4'>
+                                            Filter by:
+                                        </h1>
+                                        <div className={`hover:cursor-pointer p-2 ml-4 rounded-sm ${userTypeSelected === 'Student' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`} onClick={() => setUserTypeSelected(userTypeSelected === 'Student' ? '' : 'Student')}>
+                                            Student
+                                        </div>
+                                        <div className='w-[1px] h-8 bg-gray-700 mx-4'></div>
+                                        <div className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Endorser' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`} onClick={() => setUserTypeSelected(userTypeSelected === 'Endorser' ? '' : 'Endorser')}>
+                                            Endorser
+                                        </div>
+                                    </div>
                                 </div>
-                            </Link>
-                        ))}
-                    </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-8 mt-4">
+                                {filteredPortfolios.length > 0 ? (
+                                    filteredPortfolios.map((item) => (
+                                        <Link
+                                            key={item.user_id}
+                                            className="w-full rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
+                                            href={`/portfolio/${item.user_id}`}
+                                        >
+                                            <div className="flex flex-col h-full">
+                                                <div className="flex justify-end mb-2">
+                                                    {item.role === 2 ?
+                                                        <div
+                                                            className={`h-6 flex justify-center items-center text-white text-xs rounded-xl bg-[#5086ed] px-2`}
+                                                        >
+                                                            <i className="fas fa-check-circle mr-2"></i>
+                                                            <span>Endorser</span>
+                                                        </div>
+                                                        : <div
+                                                            className={`h-6 flex justify-center items-center text-white text-xs rounded-xl ${item.working_status === 2 ? 'bg-[#00BD62] w-24' : 'bg-[#0277B6] w-16'}`}
+                                                        >
+                                                            {item.working_status === 2 ? 'Open for Work' : 'Working'}
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div className="flex-grow">
+                                                    <div className="flex flex-col items-center mt-3 space-y-3">
+                                                        <Image
+                                                            src={item.photo}
+                                                            alt="Profile Picture"
+                                                            width={100}
+                                                            height={100}
+                                                            className="rounded-lg aspect-square object-cover border border-gray-300"
+                                                        />
+
+                                                        <div className="w-full space-y-2 text-center">
+                                                            <p className="text-base font-semibold">{item.name}</p>
+
+                                                            <div className="text-sm text-gray-600">
+                                                                <p><span className="font-bold">Contact:</span> {convertPhoneNumberSpacing(item.phone_number || '') || 'N/A'}</p>
+                                                                {item.role === 1 && (
+                                                                    <p><span className="font-bold">Major:</span> {getMajorName(item.major ?? 0) || 'N/A'}</p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full text-center py-8 text-gray-500">
+                                        {searchTerm || userTypeSelected ?
+                                            "No portfolios match your current filters." :
+                                            "No portfolios found."}
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {selected === 'Project' && (
+                        <>
+                            <div className="grid grid-cols-3 gap-8 mt-4">
+                                {project.length > 0 ? (
+                                    project.map((item: any) => (
+                                        <Link
+                                            key={item.project_id}
+                                            className="w-full rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
+                                            href={`/project/${item.project_id}`}
+                                        >
+                                            <div className="flex flex-col h-full">
+                                                <div className="flex justify-end mb-2">
+                                                    <div
+                                                        className={`h-6 flex justify-center items-center text-white text-xs rounded-xl ${item.project_visibility_status === 1 ? 'bg-green-500' : 'bg-gray-500'} px-2`}
+                                                    >
+                                                        <i className={`fas ${item.project_visibility_status === 1 ? 'fa-eye' : 'fa-eye-slash'} mr-2`}></i>
+                                                        <span>{getVisibilityLabel(item.project_visibility_status)}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-grow">
+                                                    <div className="flex flex-col items-center mt-3 space-y-3">
+                                                        <Image
+                                                            src="/api/placeholder/400/320"
+                                                            alt={item.title}
+                                                            width={100}
+                                                            height={100}
+                                                            className="rounded-lg aspect-square object-cover border border-gray-300"
+                                                        />
+
+                                                        <div className="w-full space-y-2 text-center">
+                                                            <p className="text-base font-semibold">{item.title}</p>
+
+                                                            <div className="text-sm text-gray-600">
+                                                                {item.created_at && (
+                                                                    <p><span className="font-bold">Created:</span> {new Date(item.created_at).toLocaleDateString()}</p>
+                                                                )}
+                                                                {item.portfolio_id && (
+                                                                    <p>
+                                                                        <span className="font-bold">Owner:</span>{' '}
+                                                                        {getProjectOwner(item.portfolio_id)?.name || 'Unknown'}
+                                                                        {getProjectOwner(item.portfolio_id)?.role === 2 && (
+                                                                            <i className="fas fa-check-circle ml-1 text-[#5086ed]"></i>
+                                                                        )}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full text-center py-8 text-gray-500">
+                                        {searchTerm || userTypeSelected ?
+                                            "No projects match your current filters." :
+                                            "No projects found."}
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
