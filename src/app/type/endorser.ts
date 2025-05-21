@@ -4,4 +4,5 @@ export interface Endorser {
     name: string,
     status_id: number,
     status: string,
+    photo: string,
 };
