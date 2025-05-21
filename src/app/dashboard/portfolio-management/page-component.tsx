@@ -2,13 +2,13 @@
 
 import { convertPhoneNumberSpacing } from '@/app/utils';
 import { getMajorName } from '@/dummydata/major';
-import { MagnifyingGlassIcon } from '@heroicons/react/20/solid';
 import '@fortawesome/fontawesome-free/css/all.css';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
 import { useSession } from 'next-auth/react';
+import SearchBar from '@/component/searchBar/searchBar';
 
 export default function PortfolioManagementComponent({ portfolio, project }: { portfolio: any, project: any }) {
     const { data: session } = useSession();
@@ -23,6 +23,10 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
     const [hasMoreProjects, setHasMoreProjects] = useState(true);
     const [portfolioData, setPortfolioData] = useState(portfolio || []);
     const [projectData, setProjectData] = useState(project || []);
+    const [searchResults, setSearchResults] = useState<any | null>(null);
+    const [lastSearchedTerm, setLastSearchedTerm] = useState<string>('');
+    const [isSearchActive, setIsSearchActive] = useState(false);
+    const [resetSearch, setResetSearch] = useState(false);
 
     const isFilterApplied = searchTerm || userTypeSelected;
 
@@ -43,6 +47,20 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
 
         return result;
     }, [portfolioData, searchTerm, userTypeSelected]);
+
+    const filteredSearchResults = useMemo(() => {
+        if (!searchResults || !Array.isArray(searchResults)) return [];
+        
+        let results = searchResults;
+        
+        if (userTypeSelected === 'Student') {
+            results = results.filter((item: any) => item.role === 1);
+        } else if (userTypeSelected === 'Endorser') {
+            results = results.filter((item: any) => item.role === 2);
+        }
+        
+        return results;
+    }, [searchResults, userTypeSelected]);
 
     useEffect(() => {
         if (selected === 'Portfolio') {
@@ -73,10 +91,6 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
     const getProjectOwner = (portfolioId: any) => {
         if (!Array.isArray(portfolio)) return null;
         return portfolio.find(item => item.id === portfolioId);
-    };
-
-    const handleSearch = (value: string) => {
-        setSearchTerm(value);
     };
 
     const getVisibilityLabel = (status: any) => {
@@ -151,26 +165,66 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         }
     };
 
-    const checkProjectIsSelected = () =>{
-        setSelected('Project');
-        setUserTypeSelected('');
-    }
+    const searchPortfolios = async (name: string) => {
+        if (!name.trim()) {
+            setSearchResults(null);
+            setIsSearchActive(false);
+            return;
+        }
+
+        if (name === lastSearchedTerm) {
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            setLastSearchedTerm(name);
+
+            const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}admin_search_portfolio?name=${name}`, {
+                headers: {
+                    Authorization: `Bearer ${session?.user.accessToken}`,
+                },
+            });
+            console.log(response.data);
+            if (response.data && Array.isArray(response.data)) {
+                setSearchResults(response.data);
+            } else if (response.data && response.data.data) {
+                setSearchResults(response.data);
+            }
+
+            setIsSearchActive(true);
+        } catch (error) {
+            console.error("Error searching portfolios:", error);
+            setSearchResults([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleUserTypeSelection = (type: string) => {
+        if (userTypeSelected === type) {
+            setUserTypeSelected('');
+        } else {
+            setUserTypeSelected(type);
+            setResetSearch(prev => !prev);
+        }
+    };
+
+    const handleSearch = (term: string) => {
+        setSearchTerm(term);
+        
+        // Only clear user type filter if specifically requested to do so
+        // Removed the code that automatically clears the filter
+        
+        if (term !== lastSearchedTerm) {
+            searchPortfolios(term);
+        }
+    };
 
     return (
         <div className="flex flex-col h-full p-8 pb-16 ">
             <h1 className="text-2xl font-bold mb-4">Portfolio Management</h1>
-            <div className="flex justify-center">
-                <div className="relative w-full">
-                    <input
-                        type="text"
-                        placeholder={`Search ${selected}...`}
-                        className="w-full h-10 rounded-lg pl-4 pr-10 text-gray-500 bg-white shadow-sm"
-                        onChange={(e) => handleSearch(e.target.value)}
-                        value={searchTerm}
-                    />
-                    <MagnifyingGlassIcon className="w-6 h-6 text-gray-500 absolute top-1/2 right-3 transform -translate-y-1/2" />
-                </div>
-            </div>
+            <SearchBar onSearch={handleSearch} />
             <div className='flex mt-4 justify-between'>
                 <div className='w-78 h-max bg-white shadow-md rounded-lg p-4'>
                     <div
@@ -189,27 +243,39 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                 <div className='w-full ml-4'>
                     {selected === 'Portfolio' && (
                         <>
-                            <div className='h-12 bg-white shadow-md rounded-lg'>
+                            {/* Show filter options for both regular and search state */}
+                            <div className='h-12 bg-white shadow-md rounded-lg mb-4'>
                                 <div className='flex justify-between items-center h-full'>
                                     <div className="flex items-center">
                                         <h1 className='font-bold text-lg ml-4'>
                                             Filter by:
                                         </h1>
-                                        <div className={`hover:cursor-pointer p-2 ml-4 rounded-sm ${userTypeSelected === 'Student' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`} onClick={() => setUserTypeSelected(userTypeSelected === 'Student' ? '' : 'Student')}>
+                                        <div
+                                            className={`hover:cursor-pointer p-2 ml-4 rounded-sm ${userTypeSelected === 'Student' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
+                                            onClick={() => handleUserTypeSelection('Student')}
+                                        >
                                             Student
                                         </div>
                                         <div className='w-[1px] h-8 bg-gray-700 mx-4'></div>
-                                        <div className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Endorser' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`} onClick={() => setUserTypeSelected(userTypeSelected === 'Endorser' ? '' : 'Endorser')}>
+                                        <div
+                                            className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Endorser' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
+                                            onClick={() => handleUserTypeSelection('Endorser')}
+                                        >
                                             Endorser
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-3 gap-8 mt-4 mb-8">
-                                {isFilterApplied ? (
-                                    // Display filtered portfolios when filter is applied
-                                    filteredPortfolios.length > 0 ? (
-                                        filteredPortfolios.map((item: any) => (
+                            
+                            <div className="grid grid-cols-3 gap-8 mb-8">
+                                {isLoading ? (
+                                    <div className="col-span-full text-center py-8">
+                                        <p className="text-gray-500">Loading portfolios...</p>
+                                    </div>
+                                ) : isSearchActive ? (
+                                    // Use filtered search results instead of raw search results
+                                    filteredSearchResults.length > 0 ? (
+                                        filteredSearchResults.map((item: any) => (
                                             <Link
                                                 key={item.user_id || item.id}
                                                 className="w-full rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
@@ -217,19 +283,16 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                             >
                                                 <div className="flex flex-col h-full">
                                                     <div className="flex justify-end mb-2">
-                                                        {item.role === 2 ?
-                                                            <div
-                                                                className={`h-6 flex justify-center items-center text-white text-xs rounded-xl bg-[#5086ed] px-2`}
-                                                            >
+                                                        {item.role === 2 ? (
+                                                            <div className="h-6 flex justify-center items-center text-white text-xs rounded-xl bg-[#5086ed] px-2">
                                                                 <i className="fas fa-check-circle mr-2"></i>
                                                                 <span>Endorser</span>
                                                             </div>
-                                                            : <div
-                                                                className={`h-6 flex justify-center items-center text-white text-xs rounded-xl ${item.working_status === 2 ? 'bg-[#00BD62] w-24' : 'bg-[#0277B6] w-16'}`}
-                                                            >
+                                                        ) : (
+                                                            <div className={`h-6 flex justify-center items-center text-white text-xs rounded-xl ${item.working_status === 2 ? 'bg-[#00BD62] w-24' : 'bg-[#0277B6] w-16'}`}>
                                                                 {item.working_status === 2 ? 'Open for Work' : 'Working'}
                                                             </div>
-                                                        }
+                                                        )}
                                                     </div>
                                                     <div className="flex-grow">
                                                         <div className="flex flex-col items-center mt-3 space-y-3">
@@ -240,10 +303,63 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                                 height={100}
                                                                 className="rounded-lg aspect-square object-cover border border-gray-300"
                                                             />
-
                                                             <div className="w-full space-y-2 text-center">
                                                                 <p className="text-base font-semibold">{item.name}</p>
-
+                                                                <div className="text-sm text-gray-600">
+                                                                    <p><span className="font-bold">Contact:</span> {convertPhoneNumberSpacing(item.phone_number || '') || 'N/A'}</p>
+                                                                    {item.role === 1 && (
+                                                                        <p><span className="font-bold">Major:</span> {getMajorName(item.major ?? 0) || 'N/A'}</p>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        ))
+                                    ) : (
+                                        <div className="col-span-full text-center py-8 text-gray-500">
+                                            {userTypeSelected ? 
+                                                `No ${userTypeSelected.toLowerCase()} portfolios match your search for "${lastSearchedTerm}".` :
+                                                `No portfolios match your search for "${lastSearchedTerm}".`
+                                            }
+                                        </div>
+                                    )
+                                ) : (
+                                    // Display filtered portfolios (no change here)
+                                    filteredPortfolios.length > 0 ? (
+                                        // ...existing mapping code...
+                                        filteredPortfolios.map((item) => (
+                                            <Link
+                                                key={item.user_id || item.id}
+                                                className="w-full rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
+                                                href={`/portfolio/${item.user_id}`}
+                                            >
+                                                {/* ...existing portfolio card code... */}
+                                                <div className="flex flex-col h-full">
+                                                    <div className="flex justify-end mb-2">
+                                                        {item.role === 2 ? (
+                                                            <div className="h-6 flex justify-center items-center text-white text-xs rounded-xl bg-[#5086ed] px-2">
+                                                                <i className="fas fa-check-circle mr-2"></i>
+                                                                <span>Endorser</span>
+                                                            </div>
+                                                        ) : (
+                                                            <div className={`h-6 flex justify-center items-center text-white text-xs rounded-xl ${item.working_status === 2 ? 'bg-[#00BD62] w-24' : 'bg-[#0277B6] w-16'}`}>
+                                                                {item.working_status === 2 ? 'Open for Work' : 'Working'}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-grow">
+                                                        <div className="flex flex-col items-center mt-3 space-y-3">
+                                                            <Image
+                                                                src={item.photo}
+                                                                alt="Profile Picture"
+                                                                width={100}
+                                                                height={100}
+                                                                className="rounded-lg aspect-square object-cover border border-gray-300"
+                                                            />
+                                                            <div className="w-full space-y-2 text-center">
+                                                                <p className="text-base font-semibold">{item.name}</p>
                                                                 <div className="text-sm text-gray-600">
                                                                     <p><span className="font-bold">Contact:</span> {convertPhoneNumberSpacing(item.phone_number || '') || 'N/A'}</p>
                                                                     {item.role === 1 && (
@@ -261,63 +377,9 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                             No portfolios match your current filters.
                                         </div>
                                     )
-                                ) : (
-                                    // Display all portfolios when no filter is applied
-                                    portfolioData.length > 0 ? (
-                                        portfolioData.map((item: any) => (
-                                            <Link
-                                                key={item.user_id || item.id}
-                                                className="w-full rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
-                                                href={`/portfolio/${item.user_id}`}
-                                            >
-                                                <div className="flex flex-col h-full">
-                                                    <div className="flex justify-end mb-2">
-                                                        {item.role === 2 ?
-                                                            <div
-                                                                className={`h-6 flex justify-center items-center text-white text-xs rounded-xl bg-[#5086ed] px-2`}
-                                                            >
-                                                                <i className="fas fa-check-circle mr-2"></i>
-                                                                <span>Endorser</span>
-                                                            </div>
-                                                            : <div
-                                                                className={`h-6 flex justify-center items-center text-white text-xs rounded-xl ${item.working_status === 2 ? 'bg-[#00BD62] w-24' : 'bg-[#0277B6] w-16'}`}
-                                                            >
-                                                                {item.working_status === 2 ? 'Open for Work' : 'Working'}
-                                                            </div>
-                                                        }
-                                                    </div>
-                                                    <div className="flex-grow">
-                                                        <div className="flex flex-col items-center mt-3 space-y-3">
-                                                            <Image
-                                                                src={item.photo}
-                                                                alt="Profile Picture"
-                                                                width={100}
-                                                                height={100}
-                                                                className="rounded-lg aspect-square object-cover border border-gray-300"
-                                                            />
-
-                                                            <div className="w-full space-y-2 text-center">
-                                                                <p className="text-base font-semibold">{item.name}</p>
-
-                                                                <div className="text-sm text-gray-600">
-                                                                    <p><span className="font-bold">Contact:</span> {convertPhoneNumberSpacing(item.phone_number || '') || 'N/A'}</p>
-                                                                    {item.role === 1 && (
-                                                                        <p><span className="font-bold">Major:</span> {getMajorName(item.major ?? 0) || 'N/A'}</p>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        ))
-                                    ) : (
-                                        <div className="col-span-full text-center py-8 text-gray-500">
-                                            No portfolios found.
-                                        </div>
-                                    )
                                 )}
                             </div>
+                            
                             <div className="flex justify-center items-center mt-2 mb-8">
                                 {!isFilterApplied && hasMorePortfolios && (
                                     <button
@@ -336,7 +398,6 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                         <>
                             <div className="grid grid-cols-3 gap-8 mt-4 mb-8">
                                 {isFilterApplied ? (
-                                    // Display filtered projects when filter is applied
                                     filteredProjects.length > 0 ? (
                                         filteredProjects.map((item: any) => (
                                             <Link

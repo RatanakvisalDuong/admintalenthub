@@ -39,10 +39,7 @@ export default async function PortfolioManagementPage() {
     const portfolio = portfolioData.data || [];
     const project = projectData.data || [];
 
-    console.log(portfolio);
-    console.log(project);
-
     return (
-        <PortfolioManagementComponent portfolio={portfolio} project={project} />
+        <PortfolioManagementComponent portfolio={portfolio} project={project}  />
     );
 }
