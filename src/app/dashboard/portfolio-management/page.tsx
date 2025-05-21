@@ -3,7 +3,6 @@ import PortfolioManagementComponent from './page-component';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 import { redirect } from 'next/navigation';
-import { Portfolio } from '@/app/type/portfolio';
 
 
 export default async function PortfolioManagementPage() {
@@ -14,8 +13,8 @@ export default async function PortfolioManagementPage() {
         redirect('/');
     }
 
-    const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}admin_view_all_portfolio_and_project`,
+    const portfolioData = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}admin_view_all_portfolio`,
         {
             params: {
                 page: 1,
@@ -25,8 +24,20 @@ export default async function PortfolioManagementPage() {
             },
         }
     );
-    const portfolio = response.data.portfolio || [];
-    const project = response.data.project || [];
+
+    const projectData = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}admin_view_all_project`,
+        {
+            params: {
+                page: 1,
+            },
+            headers: {
+                Authorization: `Bearer ${session?.user.accessToken}`,
+            },
+        }
+    );
+    const portfolio = portfolioData.data || [];
+    const project = projectData.data || [];
 
     console.log(portfolio);
     console.log(project);
