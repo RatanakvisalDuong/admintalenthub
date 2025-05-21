@@ -4,7 +4,6 @@ import Image from "next/image";
 import { signIn } from 'next-auth/react';
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
-import axios from "axios";
 
 export default function Login() {
     const router = useRouter();
@@ -33,36 +32,8 @@ export default function Login() {
             if (response?.error) {
                 setError(response.error);
             } else {
-                // const localData = localStorage.getItem("userData");
-                // if (!localData) return;
-                // const parsed = JSON.parse(localData);
-                // const token = parsed?.token;
-                // if (!token) return;
-                // const params = new URLSearchParams({ limit: '10' });
-                // const userResponse = await axios.get(
-                //     `${process.env.NEXT_PUBLIC_API_URL}users`,
-                //     {
-                //         params,
-                //         headers: {
-                //             Authorization: `Bearer ${token}`,
-                //         },
-                //     }
-                // );
-                // console.log('User data:', userResponse.data);   
                 router.push('dashboard/user-management');
             }
-            // const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}admin_login`, {
-            //     email: email,
-            //     password: password
-            // });
-
-            // if(response.status === 200){
-            //     localStorage.setItem('userData', JSON.stringify(response.data));
-            //     router.push('dashboard/user-management')
-            // }
-            // else{
-            //     setError(response.data.error || 'Login failed');
-            // }
         } catch (error: any) {
             if (error.response) {
                 setError(error.response.data.error || error.response.data.message || 'Login failed');

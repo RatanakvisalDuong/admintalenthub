@@ -210,10 +210,10 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                     // Display filtered portfolios when filter is applied
                                     filteredPortfolios.length > 0 ? (
                                         filteredPortfolios.map((item: any) => (
-                                            <Link
+                                            <div
                                                 key={item.user_id || item.id}
                                                 className="w-full rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
-                                                href={`portfolio/${item.user_id}`}
+                                                onClick={() => window.location.href = `/portfolio/${item.user_id}`}
                                             >
                                                 <div className="flex flex-col h-full">
                                                     <div className="flex justify-end mb-2">
@@ -254,7 +254,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </Link>
+                                            </div>
                                         ))
                                     ) : (
                                         <div className="col-span-full text-center py-8 text-gray-500">

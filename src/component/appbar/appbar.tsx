@@ -30,7 +30,7 @@ export default function AppBar() {
 		<nav className="bg-white shadow-md w-full fixed top-0 left-0 right-0 z-50 h-16">
 			<div className="max-w-9xl mx-auto sm:px-6 lg:px-8">
 				<div className="flex justify-between items-center h-16">
-					<Link className="flex" href="/">
+					<Link className="flex" href="/dashboard/portfolio-management">
 						<h1 className="text-2xl font-bold text-black cursor-pointer">
 							Talent
 						</h1>
