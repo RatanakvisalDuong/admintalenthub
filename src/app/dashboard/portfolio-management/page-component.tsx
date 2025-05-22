@@ -313,14 +313,6 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                             {/* Portfolio search bar */}
                             <div className="mb-4">
                                 <SearchBar onSearch={handleSearchPortfolio} />
-                                {isPortfolioSearchActive && (
-                                    <button 
-                                        onClick={clearPortfolioSearch}
-                                        className="mt-2 text-sm text-blue-600 hover:underline"
-                                    >
-                                        Clear search
-                                    </button>
-                                )}
                             </div>
                             
                             {/* Filter options */}
@@ -480,14 +472,6 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                             {/* Project search bar */}
                             <div className="mb-4">
                                 <SearchBar onSearch={handleSearchProject} placeHolder='Search Projects...'/>
-                                {isProjectSearchActive && (
-                                    <button 
-                                        onClick={clearProjectSearch}
-                                        className="mt-2 text-sm text-blue-600 hover:underline"
-                                    >
-                                        Clear search
-                                    </button>
-                                )}
                             </div>
                             
                             {/* Filter options for projects */}
