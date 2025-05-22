@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MagnifyingGlassIcon } from '@heroicons/react/20/solid';
 
-export default function SearchBar({ onSearch }: { onSearch: (term: string) => void }) {
+export default function SearchBar({ onSearch, placeHolder }: { onSearch: (term: string) => void; placeHolder?: string }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [isSearching, setIsSearching] = useState(false);
 
@@ -51,7 +51,7 @@ export default function SearchBar({ onSearch }: { onSearch: (term: string) => vo
                 <div className="relative w-full">
                     <input
                         type="text"
-                        placeholder="Search Portfolio..."
+                        placeholder={placeHolder || "Search Portfolio..."}
                         className="w-full h-10 rounded-lg pl-4 pr-10 text-gray-500 bg-white shadow-sm"
                         value={searchTerm}
                         onChange={handleChange}
