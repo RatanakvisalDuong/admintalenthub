@@ -475,29 +475,6 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                             </div>
 
                             {/* Filter options for projects */}
-                            <div className='h-12 bg-white shadow-md rounded-lg mb-4'>
-                                <div className='flex justify-between items-center h-full'>
-                                    <div className="flex items-center">
-                                        <h1 className='font-bold text-lg ml-4'>
-                                            Filter by owner:
-                                        </h1>
-                                        <div
-                                            className={`hover:cursor-pointer p-2 ml-4 rounded-sm ${userTypeSelected === 'Student' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
-                                            onClick={() => handleUserTypeSelection('Student')}
-                                        >
-                                            Student
-                                        </div>
-                                        <div className='w-[1px] h-8 bg-gray-700 mx-4'></div>
-                                        <div
-                                            className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Endorser' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
-                                            onClick={() => handleUserTypeSelection('Endorser')}
-                                        >
-                                            Endorser
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             <div className="grid grid-cols-3 gap-8 mb-8">
                                 {isLoading ? (
                                     <div className="col-span-full text-center py-8">
