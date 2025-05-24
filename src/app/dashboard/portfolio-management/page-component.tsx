@@ -49,24 +49,24 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
     // Filter portfolio search results by user type
     const filteredPortfolioSearchResults = useMemo(() => {
         if (!portfolioSearchResults || !Array.isArray(portfolioSearchResults)) return [];
-        
+
         let results = portfolioSearchResults;
-        
+
         if (userTypeSelected === 'Student') {
             results = results.filter((item: any) => item.role === 1);
         } else if (userTypeSelected === 'Endorser') {
             results = results.filter((item: any) => item.role === 2);
         }
-        
+
         return results;
     }, [portfolioSearchResults, userTypeSelected]);
 
     // Filter project search results
     const filteredProjectSearchResults = useMemo(() => {
         if (!projectSearchResults || !Array.isArray(projectSearchResults)) return [];
-        
+
         let results = projectSearchResults;
-        
+
         // Apply user type filter if needed for projects
         if (userTypeSelected) {
             results = results.filter((item: any) => {
@@ -78,7 +78,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                 return true;
             });
         }
-        
+
         return results;
     }, [projectSearchResults, userTypeSelected]);
 
@@ -202,7 +202,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                     Authorization: `Bearer ${session?.user.accessToken}`,
                 },
             });
-            
+
             if (response.data && Array.isArray(response.data)) {
                 setPortfolioSearchResults(response.data);
             } else if (response.data && response.data.data) {
@@ -238,7 +238,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                     Authorization: `Bearer ${session?.user.accessToken}`,
                 },
             });
-            
+
             if (response.data && Array.isArray(response.data)) {
                 setProjectSearchResults(response.data);
             } else if (response.data && response.data.data) {
@@ -285,7 +285,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
     return (
         <div className="flex flex-col h-full p-8 pb-16">
             <h1 className="text-2xl font-bold mb-4">Portfolio Management</h1>
-            
+
             <div className='flex mt-4 justify-between'>
                 <div className='w-78 h-max bg-white shadow-md rounded-lg p-4'>
                     <div
@@ -314,7 +314,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                             <div className="mb-4">
                                 <SearchBar onSearch={handleSearchPortfolio} />
                             </div>
-                            
+
                             {/* Filter options */}
                             <div className='h-12 bg-white shadow-md rounded-lg mb-4'>
                                 <div className='flex justify-between items-center h-full'>
@@ -338,7 +338,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-3 gap-8 mb-8">
                                 {isLoading ? (
                                     <div className="col-span-full text-center py-8">
@@ -391,7 +391,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                         ))
                                     ) : (
                                         <div className="col-span-full text-center py-8 text-gray-500">
-                                            {userTypeSelected ? 
+                                            {userTypeSelected ?
                                                 `No ${userTypeSelected.toLowerCase()} portfolios match your search for "${lastSearchedPortfolioTerm}".` :
                                                 `No portfolios match your search for "${lastSearchedPortfolioTerm}".`
                                             }
@@ -444,15 +444,15 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                         ))
                                     ) : (
                                         <div className="col-span-full text-center py-8 text-gray-500">
-                                            {userTypeSelected ? 
-                                                `No ${userTypeSelected.toLowerCase()} portfolios found.` : 
+                                            {userTypeSelected ?
+                                                `No ${userTypeSelected.toLowerCase()} portfolios found.` :
                                                 'No portfolios found.'
                                             }
                                         </div>
                                     )
                                 )}
                             </div>
-                            
+
                             <div className="flex justify-center items-center mt-2 mb-8">
                                 {!isPortfolioSearchActive && !isFilterApplied && hasMorePortfolios && (
                                     <button
@@ -471,9 +471,9 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                         <>
                             {/* Project search bar */}
                             <div className="mb-4">
-                                <SearchBar onSearch={handleSearchProject} placeHolder='Search Projects...'/>
+                                <SearchBar onSearch={handleSearchProject} placeHolder='Search Projects...' />
                             </div>
-                            
+
                             {/* Filter options for projects */}
                             <div className='h-12 bg-white shadow-md rounded-lg mb-4'>
                                 <div className='flex justify-between items-center h-full'>
@@ -497,7 +497,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-3 gap-8 mb-8">
                                 {isLoading ? (
                                     <div className="col-span-full text-center py-8">
@@ -556,7 +556,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                         ))
                                     ) : (
                                         <div className="col-span-full text-center py-8 text-gray-500">
-                                            {userTypeSelected ? 
+                                            {userTypeSelected ?
                                                 `No projects by ${userTypeSelected.toLowerCase()} owners match your search for "${lastSearchedProjectTerm}".` :
                                                 `No projects match your search for "${lastSearchedProjectTerm}".`
                                             }
@@ -638,30 +638,111 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                     </div>
                                                     <div className="flex-grow">
                                                         <div className="flex flex-col items-center mt-3 space-y-3">
-                                                            <Image
-                                                                src="/api/placeholder/400/320"
-                                                                alt={item.title}
-                                                                width={100}
-                                                                height={100}
-                                                                className="rounded-lg aspect-square object-cover border border-gray-300"
-                                                            />
-
-                                                            <div className="w-full space-y-2 text-center">
-                                                                <p className="text-base font-semibold">{item.title}</p>
-
-                                                                <div className="text-sm text-gray-600">
-                                                                    {item.created_at && (
-                                                                        <p><span className="font-bold">Created:</span> {new Date(item.created_at).toLocaleDateString()}</p>
+                                                            <div className="relative w-full">
+                                                                {/* Image carousel */}
+                                                                <div className="relative w-full h-[140px] overflow-hidden rounded-lg border border-gray-300">
+                                                                    {item.images && item.images.length > 0 ? (
+                                                                        <div className="relative w-full h-full">
+                                                                            {item.images.map((image: any, index: number) => (
+                                                                                <Image
+                                                                                    key={index}
+                                                                                    src={image.image_url || ""}
+                                                                                    alt={`${item.title} - image ${index + 1}`}
+                                                                                    width={400}
+                                                                                    height={320}
+                                                                                    className={`w-full h-full object-cover absolute top-0 left-0 transition-opacity duration-300`}
+                                                                                    style={{
+                                                                                        opacity: index === (item.currentImageIndex || 0) ? 1 : 0,
+                                                                                        zIndex: index === (item.currentImageIndex || 0) ? 1 : 0
+                                                                                    }}
+                                                                                />
+                                                                            ))}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                                                                            <Image
+                                                                                src="/api/placeholder/400/320"
+                                                                                alt={item.title || "Project image"}
+                                                                                width={400}
+                                                                                height={320}
+                                                                                className="w-full h-full object-cover"
+                                                                            />
+                                                                        </div>
                                                                     )}
-                                                                    {item.portfolio_id && (
-                                                                        <p>
-                                                                            <span className="font-bold">Owner:</span>{' '}
-                                                                            {getProjectOwner(item.portfolio_id)?.name || 'Unknown'}
-                                                                            {getProjectOwner(item.portfolio_id)?.role === 2 && (
-                                                                                <i className="fas fa-check-circle ml-1 text-[#5086ed]"></i>
-                                                                            )}
-                                                                        </p>
+
+                                                                    {/* Navigation buttons */}
+                                                                    {item.images && item.images.length > 1 && (
+                                                                        <>
+                                                                            <button
+                                                                                className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-r-md hover:bg-opacity-70 transition-opacity z-10"
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    e.stopPropagation();
+                                                                                    const currentIndex = item.currentImageIndex || 0;
+                                                                                    const newIndex = currentIndex === 0 ? item.images.length - 1 : currentIndex - 1;
+
+                                                                                    // Create a new object with the updated property
+                                                                                    const updatedProjectData = projectData.map((project: any) => {
+                                                                                        if (project.project_id === item.project_id) {
+                                                                                            return { ...project, currentImageIndex: newIndex };
+                                                                                        }
+                                                                                        return project;
+                                                                                    });
+
+                                                                                    // Update state with the new array
+                                                                                    setProjectData(updatedProjectData);
+                                                                                }}
+                                                                            >
+                                                                                <i className="fas fa-chevron-left text-xs"></i>
+                                                                            </button>
+                                                                            <button
+                                                                                className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-l-md hover:bg-opacity-70 transition-opacity z-10"
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    e.stopPropagation();
+                                                                                    const currentIndex = item.currentImageIndex || 0;
+                                                                                    const newIndex = (currentIndex + 1) % item.images.length;
+
+                                                                                    // Create a new object with the updated property
+                                                                                    const updatedProjectData = projectData.map((project: any) => {
+                                                                                        if (project.project_id === item.project_id) {
+                                                                                            return { ...project, currentImageIndex: newIndex };
+                                                                                        }
+                                                                                        return project;
+                                                                                    });
+
+                                                                                    // Update state with the new array
+                                                                                    setProjectData(updatedProjectData);
+                                                                                }}
+                                                                            >
+                                                                                <i className="fas fa-chevron-right text-xs"></i>
+                                                                            </button>
+                                                                            <div className="absolute bottom-1 left-0 right-0 flex justify-center">
+                                                                                <div className="bg-black bg-opacity-50 rounded-full px-2 py-0.5 text-xs text-white">
+                                                                                    {(item.currentImageIndex || 0) + 1}/{item.images.length}
+                                                                                </div>
+                                                                            </div>
+                                                                        </>
                                                                     )}
+                                                                </div>
+
+                                                                <div className="w-full space-y-2 text-center mt-3">
+                                                                    <p className="text-base font-semibold">{item.title}</p>
+
+                                                                    <div className="text-sm text-gray-600">
+                                                                        {item.created_at && (
+                                                                            <p><span className="font-bold">Created:</span> {new Date(item.created_at).toLocaleDateString()}</p>
+                                                                        )}
+                                                                        {item.portfolio_id && (
+                                                                            <p>
+                                                                                <span className="font-bold">Owner:</span>{' '}
+                                                                                {getProjectOwner(item.portfolio_id)?.name || item.user_name || 'Unknown'}
+                                                                                {getProjectOwner(item.portfolio_id)?.role === 2 && (
+                                                                                    <i className="fas fa-check-circle ml-1 text-[#5086ed]"></i>
+                                                                                )}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>

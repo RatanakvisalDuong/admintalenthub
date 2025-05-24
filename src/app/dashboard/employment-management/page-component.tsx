@@ -4,7 +4,7 @@ import { EmploymentData } from "@/app/type/employmentData";
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-export default function EmploymentManagementComponent({employmentData, jobTitles, companies}: { employmentData: EmploymentData[]; jobTitles: any[] ; companies: any[] }) {
+export default function EmploymentManagementComponent({ employmentData, jobTitles, companies }: { employmentData: EmploymentData[]; jobTitles: any[]; companies: any[] }) {
     const COLORS = ['#0088FE', '#00C49F'];
 
     const JOB_COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
@@ -12,37 +12,11 @@ export default function EmploymentManagementComponent({employmentData, jobTitles
 
     const COMPANY_COLORS = ['#FF6384', '#36A2EB',];
 
-    // const [jobTitles] = useState([
-    //     { title: 'Software Engineer', students: 130 },
-    //     { title: 'Data Scientist', students: 118 },
-    //     { title: 'Frontend Developer', students: 105 },
-    //     { title: 'Backend Developer', students: 95 },
-    //     { title: 'Product Manager', students: 82 },
-    //     { title: 'UX/UI Designer', students: 76 },
-    //     { title: 'DevOps Engineer', students: 64 },
-    //     { title: 'Full Stack Developer', students: 58 },
-    //     { title: 'QA Engineer', students: 53 },
-    //     { title: 'Business Analyst', students: 47 },
-    // ]);
-
-    // const [companies] = useState([
-    //     { title: 'Google', students: 130 },
-    //     { title: 'Microsoft', students: 118 },
-    //     { title: 'Amazon', students: 105 },
-    //     { title: 'Facebook', students: 95 },
-    //     { title: 'Apple', students: 82 },
-    //     { title: 'IBM', students: 76 },
-    //     { title: 'Intel', students: 64 },
-    //     { title: 'NVIDIA', students: 58 },
-    //     { title: 'Tesla', students: 53 },
-    //     { title: 'Samsung', students: 47 },
-    // ]);
-
     return (
-        <div className="flex flex-col h-full p-8">
+        <div className="flex flex-col h-full p-8 pb-4 overflow-y-auto">
             <h1 className="text-2xl font-bold mb-4">Employment Management</h1>
             <div className='flex justify-between'>
-                <div className="justify-center bg-white shadow-md rounded-lg p-4 w-112 h-112 hover:scale-105 transition-transform duration-300 group">
+                <div className="justify-center bg-white shadow-md rounded-lg p-4 w-112 h-112">
                     <h2 className="text-xl font-semibold mb-4 text-start">Employment Rate</h2>
                     <div className="h-96 w-96">
                         <ResponsiveContainer width="100%" height="100%">
@@ -66,7 +40,7 @@ export default function EmploymentManagementComponent({employmentData, jobTitles
                         </ResponsiveContainer>
                     </div>
                 </div>
-                <div className="bg-white shadow-md rounded-lg w-full ml-4 hover:scale-102 transition-transform duration-300 group">
+                <div className="bg-white shadow-md rounded-lg w-full ml-4 ">
                     <h2 className="text-xl font-semibold text-start mt-4 ml-4 text-gray-900">
                         Top 10 Job Titles in TalentHub
                     </h2>
@@ -102,7 +76,7 @@ export default function EmploymentManagementComponent({employmentData, jobTitles
                     </div>
                 </div>
             </div>
-            <div className="bg-white shadow-md rounded-lg w-full hover:scale-103 transition-transform duration-300 group mt-8">
+            <div className="bg-white shadow-md rounded-lg w-full group mt-8 mb-2">
                 <h2 className="text-xl font-semibold mb-4 text-start mt-4 ml-4">Top 10 Companies in TalentHub</h2>
                 <div className="h-96 w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -153,10 +127,6 @@ export default function EmploymentManagementComponent({employmentData, jobTitles
                     </ResponsiveContainer>
                 </div>
             </div>
-            <div className="h-4 w-full">
-
-            </div>
-            
         </div>
     );
 

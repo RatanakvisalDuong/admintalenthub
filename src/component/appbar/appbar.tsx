@@ -13,6 +13,7 @@ export default function AppBar() {
 		setIsOpen(!isOpen);
 	};
 
+	
 	const handleLogout = async () => {
 		axios.post(
 			`${process.env.NEXT_PUBLIC_API_URL}admin/logout`,
@@ -57,6 +58,7 @@ export default function AppBar() {
 								</Link>
 								<button
 									onClick={() => {
+										
 										handleLogout();
 									}
 									}
