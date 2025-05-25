@@ -54,9 +54,9 @@ export default function BanConfirmationDialog({ open, user, onClose, ban, setSuc
 
             <div className="relative bg-white rounded-lg shadow-xl w-[400px] z-10 p-6">
                 <div className="text-center">
-                    <p className="text-lg font-semibold mb-4 text-red-600">Confirm Ban</p>
+                    <p className="text-lg font-semibold mb-4 text-red-600">Confirm {ban === '1' ? 'Unban' : "Ban"}</p>
                     <p className="text-gray-700 mb-6">
-                        Are you sure you want to ban <span className="font-medium">{user.name}</span>? This action cannot be undone.
+                        Are you sure you want to {ban === '1' ? 'unban' : 'ban'} <span className="font-medium">{user.name}</span>?
                     </p>
                     <div className="flex justify-center gap-4">
                         <button
