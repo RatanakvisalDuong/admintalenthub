@@ -7,29 +7,44 @@ import axios from "axios";
 import { useSession } from "next-auth/react";
 import AddAdminDialog from "./add-admin-dialog";
 import AddEndorserDialog from "./add-endorser-dialog";
+import EditRoleDialog from "./edit-role-dialog";
+import BanConfirmationDialog from "./ban-confirmation-dialog";
 
 const roleMapping: Record<number, string> = {
     1: "Student",
     2: "Endorser"
 };
 
-export default function UserManagementComponent({ user, amount }: { user: User[]; amount: number }) {
+interface UserManagementComponentProps {
+    user: User[];
+    amount: number;
+}
+
+export default function UserManagementComponent({ user, amount }: UserManagementComponentProps) {
     const { data: session } = useSession();
     const [userTypeSelected, setUserTypeSelected] = useState<string | null>(null);
     const [userList, setUserList] = useState<User[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [hasMore, setHasMore] = useState<boolean>(true);
+
     const [addAdminDialogOpen, setAddAdminDialogOpen] = useState<boolean>(false);
     const [addEndorserDialogOpen, setAddEndorserDialogOpen] = useState<boolean>(false);
+
+    const [editRoleDialogOpen, setEditRoleDialogOpen] = useState<boolean>(false);
+    const [selectedUserForEdit, setSelectedUserForEdit] = useState<User | null>(null);
+
+    const [banConfirmationDialogOpen, setBanConfirmationDialogOpen] = useState<boolean>(false);
+    const [banUser, setBanUser] = useState<User | null>(null);
+
     const [currentPage, setCurrentPage] = useState<number>(1);
-    
+    const [searchTerm, setSearchTerm] = useState<string>("");
+
     const [lastUserTypeSelected, setLastUserTypeSelected] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string>("");
 
     useEffect(() => {
         if (user) {
             if (Array.isArray(user)) {
-                setUserList(user);
-            } else if (user && Array.isArray(user)) {
                 setUserList(user);
             } else {
                 setUserList([]);
@@ -38,30 +53,34 @@ export default function UserManagementComponent({ user, amount }: { user: User[]
             console.error("No user data provided");
             setUserList([]);
         }
-        
-        // Reset pagination when initial data loads
         setCurrentPage(1);
         setHasMore(true);
     }, [user]);
-    
+
     useEffect(() => {
         if (lastUserTypeSelected !== userTypeSelected) {
             setLastUserTypeSelected(userTypeSelected);
             setCurrentPage(1);
             setHasMore(true);
         }
-    }, [userTypeSelected]);
+    }, [userTypeSelected, lastUserTypeSelected]);
 
-    const handleChange = (_event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(event.target.value);
     };
 
     const getRoleName = (roleId: number): string => {
         return roleMapping[roleId] || "Unknown";
     };
 
-    const filteredUsers = userTypeSelected
-        ? userList.filter(u => getRoleName(u.role_id) === userTypeSelected)
-        : userList;
+    const filteredUsers = userList.filter(u => {
+        const matchesRole = userTypeSelected ? getRoleName(u.role_id) === userTypeSelected : true;
+        const matchesSearch = searchTerm ?
+            (u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                u.phone_number?.toLowerCase().includes(searchTerm.toLowerCase())) : true;
+        return matchesRole && matchesSearch;
+    });
 
     const handleShowMore = async () => {
         if (loading || !hasMore) return;
@@ -92,7 +111,7 @@ export default function UserManagementComponent({ user, amount }: { user: User[]
 
                 if (uniqueNewUsers.length > 0) {
                     setUserList(prev => [...prev, ...uniqueNewUsers]);
-                    setCurrentPage(nextPage); 
+                    setCurrentPage(nextPage);
                 } else {
                     setHasMore(false);
                 }
@@ -101,9 +120,6 @@ export default function UserManagementComponent({ user, amount }: { user: User[]
             }
         } catch (error) {
             console.error("Error fetching more users:", error);
-            if (axios.isAxiosError(error)) {
-                // Handle specific error if needed
-            }
             setHasMore(false);
         } finally {
             setLoading(false);
@@ -111,52 +127,55 @@ export default function UserManagementComponent({ user, amount }: { user: User[]
     };
 
     const handleAddAdmin = (formData: any) => {
-        // Implement the API call to add an admin
         console.log("Adding admin:", formData);
-        // Example API call:
-        // axios.post(`${process.env.NEXT_PUBLIC_API_URL}users/admin`, formData, {
-        //     headers: {
-        //         Authorization: `Bearer ${session?.user.accessToken}`,
-        //         Accept: 'application/json',
-        //     },
-        // })
-        // .then(response => {
-        //     // Handle success, maybe add the new user to the list
-        //     const newAdmin = response.data.user;
-        //     setUserList(prev => [...prev, newAdmin]);
-        // })
-        // .catch(error => {
-        //     console.error("Error adding admin:", error);
-        // });
-
         setAddAdminDialogOpen(false);
+        // Add logic to refresh user list if needed
     };
 
     const handleAddEndorser = (formData: any) => {
-        // Implement the API call to add an endorser
-        console.log("Adding endorser:", formData);
-        // Example API call:
-        // axios.post(`${process.env.NEXT_PUBLIC_API_URL}users/endorser`, formData, {
-        //     headers: {
-        //         Authorization: `Bearer ${session?.user.accessToken}`,
-        //         Accept: 'application/json',
-        //     },
-        // })
-        // .then(response => {
-        //     // Handle success, maybe add the new user to the list
-        //     const newEndorser = response.data.user;
-        //     setUserList(prev => [...prev, newEndorser]);
-        // })
-        // .catch(error => {
-        //     console.error("Error adding endorser:", error);
-        // });
-
         setAddEndorserDialogOpen(false);
+    };
+
+    const handleEditClick = (userItem: User) => {
+        setSelectedUserForEdit(userItem);
+        setEditRoleDialogOpen(true);
+    };
+
+    const handleBanClick = (userItem: User) => {
+        console.log("Banning user:", userItem);
+        setBanUser(userItem);
+        setBanConfirmationDialogOpen(true);
+    };
+
+    const handleRoleUpdate = (userData: User, newRole: number) => {
+        console.log("Updating role for user:", userData, "New role:", newRole);
+        setUserList(prev => prev.map(u =>
+            u.id === userData.id ? { ...u, role_id: newRole } : u
+        ));
+        setEditRoleDialogOpen(false);
+        setSelectedUserForEdit(null);
+    };
+
+    const handleFilterClick = (filterType: 'Student' | 'Endorser') => {
+        if (userTypeSelected !== filterType) {
+            setCurrentPage(1);
+            setHasMore(true);
+        }
+        setUserTypeSelected(userTypeSelected === filterType ? null : filterType);
+    };
+
+    const displaySuccessMessage = (message: string) => {
+        setSuccessMessage(message);
+        setTimeout(() => setSuccessMessage(""), 4000);
     };
 
     return (
         <div className="flex flex-col h-full p-8">
-            {/* Fixed header content */}
+            {successMessage && (
+                <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-xl shadow-sm z-50 mt-18">
+                    {successMessage}
+                </div>
+            )}
             <div className="mb-4">
                 <h1 className="text-2xl font-bold mb-4">User Management</h1>
 
@@ -165,8 +184,9 @@ export default function UserManagementComponent({ user, amount }: { user: User[]
                         <input
                             type="text"
                             placeholder="Search User..."
+                            value={searchTerm}
                             className="w-full h-10 rounded-lg pl-4 pr-4 text-gray-500 bg-white shadow-sm"
-                            onChange={handleChange}
+                            onChange={handleSearchChange}
                         />
                         <MagnifyingGlassIcon className="w-6 h-6 text-gray-500 absolute top-1/2 right-3 transform -translate-y-1/2" />
                     </div>
@@ -174,18 +194,16 @@ export default function UserManagementComponent({ user, amount }: { user: User[]
 
                 <div className="flex mt-4 justify-between">
                     <div className="flex">
-                        <button className="h-10 py-2 px-4 cursor-pointer rounded-sm text-black hover:bg-[#5086ed] hover:text-white bg-white shadow-md flex items-center"
-                            onClick={() => {
-                                setAddEndorserDialogOpen(true);
-                            }}
+                        <button
+                            className="h-10 py-2 px-4 cursor-pointer rounded-sm text-black hover:bg-[#5086ed] hover:text-white bg-white shadow-md flex items-center"
+                            onClick={() => setAddEndorserDialogOpen(true)}
                         >
                             <PlusIcon className="w-5 h-5 mr-2" />
                             Add Endorser
                         </button>
-                        <button className="ml-4 h-10 py-2 px-4 cursor-pointer rounded-sm text-black hover:bg-[#5086ed] hover:text-white bg-white shadow-md flex items-center"
-                            onClick={() => {
-                                setAddAdminDialogOpen(true);
-                            }}
+                        <button
+                            className="ml-4 h-10 py-2 px-4 cursor-pointer rounded-sm text-black hover:bg-[#5086ed] hover:text-white bg-white shadow-md flex items-center"
+                            onClick={() => setAddAdminDialogOpen(true)}
                         >
                             <PlusIcon className="w-5 h-5 mr-2" />
                             Add Admin
@@ -198,30 +216,14 @@ export default function UserManagementComponent({ user, amount }: { user: User[]
                             </h1>
                             <div
                                 className={`hover:cursor-pointer p-2 ml-4 rounded-sm ${userTypeSelected === 'Student' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
-                                onClick={() => {
-                                    // If selecting a different filter, reset pagination
-                                    if (userTypeSelected !== 'Student') {
-                                        setCurrentPage(1);
-                                        setHasMore(true);
-                                        setLastUserTypeSelected('Student');
-                                    }
-                                    setUserTypeSelected(userTypeSelected === 'Student' ? null : 'Student');
-                                }}
+                                onClick={() => handleFilterClick('Student')}
                             >
                                 Student
                             </div>
                             <div className='w-[1px] h-8 bg-gray-700 mx-4'></div>
                             <div
                                 className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Endorser' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
-                                onClick={() => {
-                                    // If selecting a different filter, reset pagination
-                                    if (userTypeSelected !== 'Endorser') {
-                                        setCurrentPage(1);
-                                        setHasMore(true);
-                                        setLastUserTypeSelected('Endorser');
-                                    }
-                                    setUserTypeSelected(userTypeSelected === 'Endorser' ? null : 'Endorser');
-                                }}
+                                onClick={() => handleFilterClick('Endorser')}
                             >
                                 Endorser
                             </div>
@@ -256,17 +258,31 @@ export default function UserManagementComponent({ user, amount }: { user: User[]
                             <tbody>
                                 {filteredUsers && filteredUsers.length > 0 ? (
                                     filteredUsers.map((userItem, index) => (
-                                        <tr key={index} className="border-b hover:bg-gray-100">
+                                        <tr key={userItem.id || index} className="border-b hover:bg-gray-100">
                                             <td className="py-2 px-4 text-gray-700 w-[20%]">{userItem.name || 'N/A'}</td>
                                             <td className="py-2 px-4 text-gray-700 w-[30%]">{userItem.email || 'N/A'}</td>
                                             <td className="py-2 px-4 text-gray-700 w-[20%]">{userItem.phone_number || 'N/A'}</td>
                                             <td className="py-2 px-4 text-gray-700 w-[10%]">{getRoleName(userItem.role_id)}</td>
                                             <td className="py-2 px-4 text-gray-700 w-[20%] flex space-x-2">
-                                                <button className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600">Edit</button>
-                                                <button className="px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600">Ban</button>
+                                                <button
+                                                    className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
+                                                    onClick={() => handleEditClick(userItem)}
+                                                >
+                                                    Update
+                                                </button>
+                                                {userItem.status == 1 ? <button className="px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600"
+                                                    onClick={() => handleBanClick(userItem)}
+                                                >
+                                                    Ban
+                                                </button> : <button className="px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600"
+                                                    onClick={() => handleBanClick(userItem)}
+                                                >
+                                                    Unban
+                                                </button>}
+
                                             </td>
                                         </tr>
-                                    ),)
+                                    ))
                                 ) : (
                                     <tr>
                                         <td colSpan={5} className="py-4 text-center text-gray-500">
@@ -292,16 +308,37 @@ export default function UserManagementComponent({ user, amount }: { user: User[]
                 </div>
             </div>
 
-            <AddAdminDialog 
-                isOpen={addAdminDialogOpen} 
-                onClose={() => setAddAdminDialogOpen(false)} 
+            <AddAdminDialog
+                isOpen={addAdminDialogOpen}
+                onClose={() => setAddAdminDialogOpen(false)}
                 onSubmit={handleAddAdmin}
             />
 
             <AddEndorserDialog
-                isOpen={addEndorserDialogOpen} 
-                onClose={() => setAddEndorserDialogOpen(false)} 
-                onSubmit={handleAddEndorser}
+                isOpen={addEndorserDialogOpen}
+                onClose={() => setAddEndorserDialogOpen(false)}
+                setSuccessMessage={displaySuccessMessage}
+            />
+
+            <EditRoleDialog
+                open={editRoleDialogOpen}
+                onClose={() => {
+                    setEditRoleDialogOpen(false);
+                    setSelectedUserForEdit(null);
+                }}
+                user={selectedUserForEdit}
+                setSuccessMessage={displaySuccessMessage}
+            />
+
+            <BanConfirmationDialog
+                open={banConfirmationDialogOpen}
+                onClose={() => {
+                    setBanConfirmationDialogOpen(false);
+                    setBanUser(null);
+                }}
+                user={banUser}
+                ban={banUser?.status === 1 ? '0' : '1'}
+                setSuccessMessage={displaySuccessMessage}
             />
         </div>
     );

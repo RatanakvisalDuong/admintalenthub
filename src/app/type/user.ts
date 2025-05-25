@@ -6,4 +6,5 @@ export interface User {
     photo: string | null;
     google_id: string | null;
     phone_number: string | null;
+    status: number;
 }

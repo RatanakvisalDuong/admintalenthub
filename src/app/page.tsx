@@ -32,7 +32,7 @@ export default function Login() {
             if (response?.error) {
                 setError(response.error);
             } else {
-                router.push('dashboard/user-management');
+                router.push('dashboard/portfolio-management');
             }
         } catch (error: any) {
             if (error.response) {
