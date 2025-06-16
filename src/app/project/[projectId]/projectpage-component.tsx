@@ -10,7 +10,6 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Endorser } from "@/app/type/endorser";
 import axios from "axios";
-import { PencilSquareIcon } from "@heroicons/react/20/solid";
 
 interface ProjectPageComponentProps {
     projectData: any;
