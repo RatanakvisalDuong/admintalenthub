@@ -11,7 +11,7 @@ export default function AchievementCard({ achievement, onClick }: { achievement:
 		>
 			<div className="flex w-full justify-between">
 				<div className="w-[70%] overflow-hidden">
-					<p className="text-sm text-gray-600">{achievement.title}</p>
+					<p className="text-sm text-gray-600 font-bold">{achievement.title}</p>
 				</div>
 				{achievement.endorsers && achievement.endorsers.filter(endorser => endorser.status_id === 2).length > 0 && (
 					<div className="w-[30%] h-auto flex justify-end">

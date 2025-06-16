@@ -23,3 +23,12 @@ export const getMajorName = (majorId: number | null): string => {
     const major = majors.find((m) => m.id === majorId);
     return major?.name || "";
 };
+
+export function sanitizeQuillHtml(html: string): string {
+  if (!html || html === '<p><br></p>') return '';
+
+  return html
+    .replace(/\s+/g, ' ')
+    .replace(/>\s+</g, '><')
+    .replace(/(<\/(?:p|div|h[1-6]|li|ul|ol)>)(<(?!\/|br|p|div|h[1-6]|li|ul|ol))/g, '$1 $2');
+}

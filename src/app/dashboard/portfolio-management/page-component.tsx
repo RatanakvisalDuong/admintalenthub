@@ -82,17 +82,19 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         return results;
     }, [projectSearchResults, userTypeSelected]);
 
-    useEffect(() => {
-        if (selected === 'Portfolio') {
-            setHasMorePortfolios(true);
-        } else {
-            setHasMoreProjects(true);
-        }
-    }, [selected]);
-
+    // Initialize project data and apply filters correctly
     useEffect(() => {
         if (Array.isArray(project)) {
-            const filtered: any = project.filter(item => {
+            // Add currentImageIndex to each project if not present
+            const projectsWithImageIndex = project.map(item => ({
+                ...item,
+                currentImageIndex: item.currentImageIndex || 0
+            }));
+            
+            setProjectData(projectsWithImageIndex);
+            
+            // Filter projects
+            const filtered: any = projectsWithImageIndex.filter(item => {
                 if (userTypeSelected && item.portfolio_id) {
                     const owner = getProjectOwner(item.portfolio_id);
                     if (owner) {
@@ -104,7 +106,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
             });
             setFilteredProjects(filtered);
         }
-    }, [project, userTypeSelected]);
+    }, [project, userTypeSelected, portfolio]);
 
     const getProjectOwner = (portfolioId: any) => {
         if (!Array.isArray(portfolio)) return null;
@@ -119,11 +121,13 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         if (!hasMorePortfolios || isLoading) return;
         try {
             setIsLoading(true);
-            const portfolioData = await axios.get(
+            const nextPage = portfolioPage + 1;
+            
+            const response = await axios.get(
                 `${process.env.NEXT_PUBLIC_API_URL}admin_view_all_portfolio`,
                 {
                     params: {
-                        page: portfolioPage + 1,
+                        page: nextPage,
                     },
                     headers: {
                         Authorization: `Bearer ${session?.user.accessToken}`,
@@ -131,12 +135,13 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                     },
                 }
             );
-            const newPortfolios = portfolioData.data || [];
+            
+            const newPortfolios = response.data || [];
             if (newPortfolios.length === 0) {
                 setHasMorePortfolios(false);
             } else {
                 setPortfolioData((prevData: any) => [...prevData, ...newPortfolios]);
-                setPortfolioPage(portfolioPage + 1);
+                setPortfolioPage(nextPage);
             }
         } catch (error) {
             console.error("Error loading more portfolios:", error);
@@ -152,7 +157,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
             setIsLoading(true);
             const nextPage = projectPage + 1;
 
-            const projectData = await axios.get(
+            const response = await axios.get(
                 `${process.env.NEXT_PUBLIC_API_URL}admin_view_all_project`,
                 {
                     params: {
@@ -164,16 +169,18 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                 }
             );
 
-            const newProjects = projectData.data || [];
+            const newProjects = response.data || [];
 
             if (newProjects.length === 0) {
                 setHasMoreProjects(false);
             } else {
-                setProjectData([...project, ...newProjects]);
+                const projectsWithImageIndex = newProjects.map((item: any) => ({
+                    ...item,
+                    currentImageIndex: 0
+                }));
+                
+                setProjectData((prevData: any) => [...prevData, ...projectsWithImageIndex]);
                 setProjectPage(nextPage);
-                if (newProjects.length < 2) {
-                    setHasMoreProjects(true);
-                }
             }
         } catch (error) {
             console.error("Error loading more projects:", error);
@@ -186,6 +193,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         if (!name.trim()) {
             setPortfolioSearchResults(null);
             setIsPortfolioSearchActive(false);
+            setLastSearchedPortfolioTerm('');
             return;
         }
 
@@ -222,6 +230,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         if (!name.trim()) {
             setProjectSearchResults(null);
             setIsProjectSearchActive(false);
+            setLastSearchedProjectTerm('');
             return;
         }
 
@@ -239,12 +248,20 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                 },
             });
 
+            let searchResults = [];
             if (response.data && Array.isArray(response.data)) {
-                setProjectSearchResults(response.data);
+                searchResults = response.data;
             } else if (response.data && response.data.data) {
-                setProjectSearchResults(response.data.data);
+                searchResults = response.data.data;
             }
 
+            // Add currentImageIndex to search results
+            const searchResultsWithImageIndex = searchResults.map((item: any) => ({
+                ...item,
+                currentImageIndex: 0
+            }));
+
+            setProjectSearchResults(searchResultsWithImageIndex);
             setIsProjectSearchActive(true);
         } catch (error) {
             console.error("Error searching projects:", error);
@@ -281,6 +298,156 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         setIsProjectSearchActive(false);
         setLastSearchedProjectTerm('');
     };
+
+    // Handle image navigation for projects
+    const handleImageNavigation = (projectId: any, direction: 'prev' | 'next', dataSource: 'main' | 'search' | 'filtered') => {
+        if (dataSource === 'search') {
+            setProjectSearchResults((prevResults: any) => {
+                if (!prevResults) return prevResults;
+                
+                return prevResults.map((project: any) => {
+                    if (project.project_id === projectId && project.images && project.images.length > 1) {
+                        const currentIndex = project.currentImageIndex || 0;
+                        let newIndex;
+                        
+                        if (direction === 'prev') {
+                            newIndex = currentIndex === 0 ? project.images.length - 1 : currentIndex - 1;
+                        } else {
+                            newIndex = (currentIndex + 1) % project.images.length;
+                        }
+                        
+                        return { ...project, currentImageIndex: newIndex };
+                    }
+                    return project;
+                });
+            });
+        } else {
+            setProjectData((prevData: any) => {
+                return prevData.map((project: any) => {
+                    if (project.project_id === projectId && project.images && project.images.length > 1) {
+                        const currentIndex = project.currentImageIndex || 0;
+                        let newIndex;
+                        
+                        if (direction === 'prev') {
+                            newIndex = currentIndex === 0 ? project.images.length - 1 : currentIndex - 1;
+                        } else {
+                            newIndex = (currentIndex + 1) % project.images.length;
+                        }
+                        
+                        return { ...project, currentImageIndex: newIndex };
+                    }
+                    return project;
+                });
+            });
+        }
+    };
+
+    // Project card component to avoid repetition
+    const ProjectCard = ({ item, dataSource }: { item: any, dataSource: 'main' | 'search' | 'filtered' }) => (
+        <Link
+            key={item.project_id}
+            className="w-full rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
+            href={`/project/${item.project_id}`}
+        >
+            <div className="flex flex-col h-full">
+                <div className="flex justify-end mb-2">
+                    <div
+                        className={`h-6 flex justify-center items-center text-white text-xs rounded-xl ${item.project_visibility_status === 1 ? 'bg-green-500' : 'bg-gray-500'} px-2`}
+                    >
+                        <i className={`fas ${item.project_visibility_status === 1 ? 'fa-eye' : 'fa-eye-slash'} mr-2`}></i>
+                        <span>{getVisibilityLabel(item.project_visibility_status)}</span>
+                    </div>
+                </div>
+                <div className="flex-grow">
+                    <div className="flex flex-col items-center mt-3 space-y-3">
+                        <div className="relative w-full">
+                            {/* Image carousel */}
+                            <div className="relative w-full h-[140px] overflow-hidden rounded-lg border border-gray-300">
+                                {item.images && item.images.length > 0 ? (
+                                    <div className="relative w-full h-full">
+                                        {item.images.map((image: any, index: number) => (
+                                            <Image
+                                                key={index}
+                                                src={image.image_url || ""}
+                                                alt={`${item.title} - image ${index + 1}`}
+                                                width={400}
+                                                height={320}
+                                                className={`w-full h-full object-cover absolute top-0 left-0 transition-opacity duration-300`}
+                                                style={{
+                                                    opacity: index === (item.currentImageIndex || 0) ? 1 : 0,
+                                                    zIndex: index === (item.currentImageIndex || 0) ? 1 : 0
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                                        <Image
+                                            src="/api/placeholder/400/320"
+                                            alt={item.title || "Project image"}
+                                            width={400}
+                                            height={320}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Navigation buttons */}
+                                {item.images && item.images.length > 1 && (
+                                    <>
+                                        <button
+                                            className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-r-md hover:bg-opacity-70 transition-opacity z-10"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleImageNavigation(item.project_id, 'prev', dataSource);
+                                            }}
+                                        >
+                                            <i className="fas fa-chevron-left text-xs"></i>
+                                        </button>
+                                        <button
+                                            className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-l-md hover:bg-opacity-70 transition-opacity z-10"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleImageNavigation(item.project_id, 'next', dataSource);
+                                            }}
+                                        >
+                                            <i className="fas fa-chevron-right text-xs"></i>
+                                        </button>
+                                        <div className="absolute bottom-1 left-0 right-0 flex justify-center">
+                                            <div className="bg-black bg-opacity-50 rounded-full px-2 py-0.5 text-xs text-white">
+                                                {(item.currentImageIndex || 0) + 1}/{item.images.length}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="w-full space-y-2 text-center mt-3">
+                                <p className="text-base font-semibold">{item.title}</p>
+
+                                <div className="text-sm text-gray-600">
+                                    {item.created_at && (
+                                        <p><span className="font-bold">Created:</span> {new Date(item.created_at).toLocaleDateString()}</p>
+                                    )}
+                                    {item.portfolio_id && (
+                                        <p>
+                                            <span className="font-bold">Owner:</span>{' '}
+                                            {getProjectOwner(item.portfolio_id)?.name || item.user_name || 'Unknown'}
+                                            {getProjectOwner(item.portfolio_id)?.role === 2 && (
+                                                <i className="fas fa-check-circle ml-1 text-[#5086ed]"></i>
+                                            )}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Link>
+    );
 
     return (
         <div className="flex flex-col h-full p-8 pb-16">
@@ -340,7 +507,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                             </div>
 
                             <div className="grid grid-cols-3 gap-8 mb-8">
-                                {isLoading ? (
+                                {isLoading && portfolioData.length === 0 ? (
                                     <div className="col-span-full text-center py-8">
                                         <p className="text-gray-500">Loading portfolios...</p>
                                     </div>
@@ -475,13 +642,35 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                             </div>
 
                             {/* Filter options for projects */}
+                            <div className='h-12 bg-white shadow-md rounded-lg mb-4'>
+                                <div className='flex justify-between items-center h-full'>
+                                    <div className="flex items-center">
+                                        <h1 className='font-bold text-lg ml-4'>
+                                            Filter by:
+                                        </h1>
+                                        <div
+                                            className={`hover:cursor-pointer p-2 ml-4 rounded-sm ${userTypeSelected === 'Student' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
+                                            onClick={() => handleUserTypeSelection('Student')}
+                                        >
+                                            Student
+                                        </div>
+                                        <div className='w-[1px] h-8 bg-gray-700 mx-4'></div>
+                                        <div
+                                            className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Endorser' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
+                                            onClick={() => handleUserTypeSelection('Endorser')}
+                                        >
+                                            Endorser
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-3 gap-8 mb-8">
-                                {isLoading ? (
+                                {isLoading && projectData.length === 0 ? (
                                     <div className="col-span-full text-center py-8">
                                         <p className="text-gray-500">Loading projects...</p>
                                     </div>
                                 ) : isProjectSearchActive ? (
-                                    // Display filtered project search results
                                     filteredProjectSearchResults.length > 0 ? (
                                         filteredProjectSearchResults.map((item: any) => (
                                             <Link
@@ -540,13 +729,12 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                         </div>
                                     )
                                 ) : userTypeSelected ? (
-                                    // Display filtered projects by owner type
                                     filteredProjects.length > 0 ? (
                                         filteredProjects.map((item: any) => (
                                             <Link
                                                 key={item.project_id}
                                                 className="w-full rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
-                                                href={`project/${item.project_id}`}
+                                                href={`/project/${item.project_id}`}
                                             >
                                                 <div className="flex flex-col h-full">
                                                     <div className="flex justify-end mb-2">
@@ -602,7 +790,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                             <Link
                                                 key={item.project_id}
                                                 className="w-full rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
-                                                href={`project/${item.project_id}`}
+                                                href={`/project/${item.project_id}`}
                                             >
                                                 <div className="flex flex-col h-full">
                                                     <div className="flex justify-end mb-2">
