@@ -39,8 +39,9 @@ export default function PendingEndorserApplicationPage() {
     const router = useRouter();
     const [applications, setApplications] = useState<EndorserApplication[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string>('');
-    
+    const [initialError, setInitialError] = useState<string>(''); // Separate error for initial load
+    const [dialogError, setDialogError] = useState<string>(''); // Separate error for dialog operations
+
     // Dialog states
     const [selectedApplication, setSelectedApplication] = useState<EndorserApplicationDetail | null>(null);
     const [showDetailDialog, setShowDetailDialog] = useState<boolean>(false);
@@ -49,6 +50,7 @@ export default function PendingEndorserApplicationPage() {
     const [detailLoading, setDetailLoading] = useState<boolean>(false);
     const [actionLoading, setActionLoading] = useState<boolean>(false);
     const [successMessage, setSuccessMessage] = useState<string>('');
+    const [errorMessage, setErrorMessage] = useState<string>(''); // New state for general error messages
 
     useEffect(() => {
         const fetchApplications = async () => {
@@ -71,11 +73,11 @@ export default function PendingEndorserApplicationPage() {
                 if (response.data.success) {
                     setApplications(response.data.data);
                 } else {
-                    setError('Failed to fetch applications');
+                    setInitialError('Failed to fetch applications');
                 }
             } catch (err) {
                 console.error('Error fetching endorser applications:', err);
-                setError('An error occurred while fetching applications');
+                setInitialError('An error occurred while fetching applications');
             } finally {
                 setLoading(false);
             }
@@ -97,10 +99,11 @@ export default function PendingEndorserApplicationPage() {
 
     const handleViewDetail = async (application: EndorserApplication) => {
         if (!session?.user?.accessToken) return;
-        
+
         setDetailLoading(true);
         setShowDetailDialog(true);
-        
+        setDialogError(''); // Clear any previous dialog errors
+
         try {
             const response = await axios.get(
                 `${process.env.NEXT_PUBLIC_API_URL}admin_view_endorser_request_detail/${application.id}`,
@@ -111,17 +114,15 @@ export default function PendingEndorserApplicationPage() {
                     },
                 }
             );
-            
+
             if (response.data) {
                 setSelectedApplication(response.data);
             } else {
-                setError('Failed to fetch application details');
-                setShowDetailDialog(false);
+                setDialogError('Failed to fetch application details');
             }
         } catch (err) {
             console.error('Error fetching application details:', err);
-            setError('An error occurred while fetching application details');
-            setShowDetailDialog(false);
+            setDialogError('An error occurred while fetching application details');
         } finally {
             setDetailLoading(false);
         }
@@ -134,9 +135,11 @@ export default function PendingEndorserApplicationPage() {
 
     const confirmAction = async () => {
         if (!selectedApplication || !actionType || !session?.user?.accessToken) return;
-        
+
         setActionLoading(true);
-        
+        setDialogError(''); // Clear any existing errors
+        setErrorMessage(''); // Clear general error message
+
         try {
             const response = await axios.put(
                 `${process.env.NEXT_PUBLIC_API_URL}admin_update_endorser_request/${selectedApplication.id}`,
@@ -149,29 +152,68 @@ export default function PendingEndorserApplicationPage() {
                     },
                 }
             );
-            
+
             // Check if the request was successful (status 200)
             if (response.status === 200) {
                 setSuccessMessage(`Application ${actionType === 'approve' ? 'approved' : 'declined'} successfully!`);
-                
+
                 // Remove the application from the list
                 setApplications(prev => prev.filter(app => app.id !== selectedApplication.id));
-                
+
                 // Close dialogs
                 setShowConfirmDialog(false);
                 setShowDetailDialog(false);
                 setSelectedApplication(null);
                 setActionType(null);
-                
+
                 // Clear success message after 4 seconds
                 setTimeout(() => setSuccessMessage(''), 4000);
-                router.refresh();
             } else {
-                setError(`Failed to ${actionType} application`);
+                // Non-200 status code - show error in dialog
+                setDialogError(`Failed to ${actionType} application: ${response.data?.message || 'Unknown error'}`);
+                setShowConfirmDialog(false);
+                setActionType(null);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(`Error ${actionType}ing application:`, err);
-            setError(`An error occurred while ${actionType}ing the application`);
+
+            // Display detailed error message
+            let errorMessage = `An error occurred while ${actionType}ing the application`;
+
+            if (err.response) {
+                // Server responded with error status
+                if (err.response.status === 409) {
+                    // Special message for 409 conflict - DON'T remove from table
+                    errorMessage = `This application has already been processed. The email ${selectedApplication.email} was already approved or declined by another admin.`;
+                    // Show error message but keep data in table
+                    setErrorMessage(errorMessage);
+                    setTimeout(() => setErrorMessage(''), 8000);
+                } else if (err.response.data?.message) {
+                    errorMessage = err.response.data.message;
+                } else if (err.response.status === 401) {
+                    errorMessage = 'Unauthorized. Please login again.';
+                } else if (err.response.status === 403) {
+                    errorMessage = 'You do not have permission to perform this action.';
+                } else if (err.response.status === 404) {
+                    errorMessage = 'Application not found. It may have been deleted.';
+                } else if (err.response.status >= 500) {
+                    errorMessage = 'Server error. Please try again later.';
+                } else {
+                    errorMessage = `Error ${err.response.status}: ${err.response.statusText}`;
+                }
+            } else if (err.request) {
+                // Request was made but no response received
+                errorMessage = 'No response from server. Please check your internet connection.';
+            } else {
+                // Something else happened
+                errorMessage = err.message || errorMessage;
+            }
+
+            // Show error in dialog for all errors
+            setDialogError(errorMessage);
+            
+            setShowConfirmDialog(false);
+            setActionType(null);
         } finally {
             setActionLoading(false);
         }
@@ -186,14 +228,15 @@ export default function PendingEndorserApplicationPage() {
         );
     }
 
-    if (error) {
+    // Only show full-screen error for initial loading errors
+    if (initialError) {
         return (
             <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
                 <div className="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg mb-4 text-base">
-                    {error}
+                    {initialError}
                 </div>
-                <button 
-                    onClick={() => window.location.reload()} 
+                <button
+                    onClick={() => window.location.reload()}
                     className="bg-blue-500 text-white px-6 py-3 rounded-lg text-base hover:bg-blue-600 transition-colors duration-200"
                 >
                     Try Again
@@ -215,11 +258,23 @@ export default function PendingEndorserApplicationPage() {
                     </div>
                 </div>
             )}
-            
+
+            {/* Error Message */}
+            {errorMessage && (
+                <div className="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 border-l-4 border-red-700">
+                    <div className="flex items-center">
+                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                        {errorMessage}
+                    </div>
+                </div>
+            )}
+
             <div className="mb-6">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Pending Endorser Applications</h1>
                 <p className="text-lg text-gray-600 mb-4">Review and manage endorser application requests</p>
-                
+
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center">
                         <div className="bg-blue-100 rounded-full p-2 mr-3">
@@ -272,8 +327,8 @@ export default function PendingEndorserApplicationPage() {
                 <div className="overflow-y-auto flex-1">
                     {applications && applications.length > 0 ? (
                         applications.map((application, index) => (
-                            <div 
-                                key={application.id || index} 
+                            <div
+                                key={application.id || index}
                                 className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150"
                             >
                                 {/* Applicant Name */}
@@ -336,7 +391,7 @@ export default function PendingEndorserApplicationPage() {
                 </div>
             </div>
 
-            {/* Application Detail Dialog - Simplified Style */}
+            {/* Application Detail Dialog */}
             {showDetailDialog && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center">
                     <div
@@ -344,6 +399,7 @@ export default function PendingEndorserApplicationPage() {
                         onClick={() => {
                             setShowDetailDialog(false);
                             setSelectedApplication(null);
+                            setDialogError(''); // Clear dialog error when closing
                         }}
                     ></div>
                     <div className="relative bg-white rounded-lg shadow-xl w-[600px] max-h-[90vh] z-10 overflow-hidden">
@@ -354,6 +410,7 @@ export default function PendingEndorserApplicationPage() {
                                 onClick={() => {
                                     setShowDetailDialog(false);
                                     setSelectedApplication(null);
+                                    setDialogError(''); // Clear dialog error when closing
                                 }}
                                 className="text-gray-500 hover:text-gray-700"
                             >
@@ -362,6 +419,18 @@ export default function PendingEndorserApplicationPage() {
                                 </svg>
                             </button>
                         </div>
+
+                        {/* Error Message in Dialog */}
+                        {dialogError && (
+                            <div className="mx-4 mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                                <div className="flex items-center">
+                                    <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                    </svg>
+                                    <span className="text-sm">{dialogError}</span>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Body */}
                         <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
@@ -379,7 +448,7 @@ export default function PendingEndorserApplicationPage() {
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                                                 <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
-                                                    {selectedApplication.name} {selectedApplication.id}
+                                                    {selectedApplication.name}
                                                 </div>
                                             </div>
                                             <div>
@@ -437,8 +506,8 @@ export default function PendingEndorserApplicationPage() {
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Identity Image</label>
                                             <div className="border border-gray-300 rounded-md p-3 bg-gray-50">
-                                                <img 
-                                                    src={selectedApplication.image_url} 
+                                                <img
+                                                    src={selectedApplication.image_url}
                                                     alt={`${selectedApplication.name}'s profile`}
                                                     className="max-w-full max-h-48 object-cover rounded-md mx-auto"
                                                     onError={(e) => {
@@ -461,13 +530,15 @@ export default function PendingEndorserApplicationPage() {
                             <div className="border-t p-4 flex justify-end space-x-3">
                                 <button
                                     onClick={() => handleAction('decline')}
-                                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 cursor-pointer"
+                                    disabled={actionLoading}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Decline
                                 </button>
                                 <button
                                     onClick={() => handleAction('approve')}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 cursor-pointer"
+                                    disabled={actionLoading}
+                                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Approve
                                 </button>
@@ -483,9 +554,8 @@ export default function PendingEndorserApplicationPage() {
                     <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
                         <div className="p-6">
                             <div className="flex items-center mb-4">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${
-                                    actionType === 'approve' ? 'bg-green-100' : 'bg-red-100'
-                                }`}>
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${actionType === 'approve' ? 'bg-green-100' : 'bg-red-100'
+                                    }`}>
                                     {actionType === 'approve' ? (
                                         <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -505,7 +575,7 @@ export default function PendingEndorserApplicationPage() {
                                     </p>
                                 </div>
                             </div>
-                            
+
                             {selectedApplication && (
                                 <div className="bg-gray-50 rounded-lg p-4 mb-6">
                                     <p className="text-sm text-gray-600">Applicant:</p>
@@ -528,11 +598,10 @@ export default function PendingEndorserApplicationPage() {
                                 <button
                                     onClick={confirmAction}
                                     disabled={actionLoading}
-                                    className={`px-4 py-2 text-white rounded-lg transition-colors duration-200 disabled:opacity-50 cursor-pointer ${
-                                        actionType === 'approve' 
-                                            ? 'bg-green-600 hover:bg-green-700' 
+                                    className={`px-4 py-2 text-white rounded-lg transition-colors duration-200 disabled:opacity-50 cursor-pointer ${actionType === 'approve'
+                                            ? 'bg-green-600 hover:bg-green-700'
                                             : 'bg-red-600 hover:bg-red-700'
-                                    }`}
+                                        }`}
                                 >
                                     {actionLoading ? (
                                         <div className="flex items-center">

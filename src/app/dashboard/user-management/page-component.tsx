@@ -95,7 +95,7 @@ export default function UserManagementComponent({ user, amount }: UserManagement
         try {
             setIsSearching(true);
             const response = await axios.get(
-                `https://talenthub.newlinkmarketing.com/api/admin_search_user`,
+                `${process.env.NEXT_PUBLIC_API_URL}admin_search_user`,
                 {
                     params: { name: searchValue },
                     headers: {
@@ -129,7 +129,6 @@ export default function UserManagementComponent({ user, amount }: UserManagement
         return roleMapping[roleId] || "Unknown";
     };
 
-    // Updated filter logic to handle both original users and search results
     const filteredUsers = (() => {
         const sourceUsers = searchTerm ? searchResults : userList;
         
@@ -140,7 +139,7 @@ export default function UserManagementComponent({ user, amount }: UserManagement
     })();
 
     const handleShowMore = async () => {
-        if (loading || !hasMore || searchTerm) return; // Don't load more when searching
+        if (loading || !hasMore || searchTerm) return;
 
         try {
             setLoading(true);
@@ -182,11 +181,26 @@ export default function UserManagementComponent({ user, amount }: UserManagement
             setLoading(false);
         }
     };
+    const handleStatusUpdate = (userData: User, newStatus: number) => {
+    console.log("Updating status for user:", userData, "New status:", newStatus);
+    
+    // Update in both userList and searchResults if applicable
+    setUserList(prev => prev.map(u =>
+        u.id === userData.id ? { ...u, status: newStatus } : u
+    ));
+    
+    if (searchTerm && searchResults.length > 0) {
+        setSearchResults(prev => prev.map(u =>
+            u.id === userData.id ? { ...u, status: newStatus } : u
+        ));
+    }
+    
+    setBanConfirmationDialogOpen(false);
+    setBanUser(null);
+};
 
     const handleAddAdmin = (formData: any) => {
-        console.log("Adding admin:", formData);
         setAddAdminDialogOpen(false);
-        // Add logic to refresh user list if needed
     };
 
     const handleAddEndorser = (formData: any) => {
@@ -205,7 +219,7 @@ export default function UserManagementComponent({ user, amount }: UserManagement
     };
 
     const handleRoleUpdate = (userData: User, newRole: number) => {
-        console.log("Updating role for user:", userData, "New role:", newRole);
+
         
         // Update in both userList and searchResults if applicable
         setUserList(prev => prev.map(u =>
@@ -530,6 +544,7 @@ export default function UserManagementComponent({ user, amount }: UserManagement
                 }}
                 user={selectedUserForEdit}
                 setSuccessMessage={displaySuccessMessage}
+                onRoleUpdate={handleRoleUpdate}
             />
 
             <BanConfirmationDialog
@@ -541,6 +556,7 @@ export default function UserManagementComponent({ user, amount }: UserManagement
                 user={banUser}
                 ban={banUser?.status === 1 ? '0' : '1'}
                 setSuccessMessage={displaySuccessMessage}
+                onStatusUpdate={handleStatusUpdate}
             />
         </div>
     );
