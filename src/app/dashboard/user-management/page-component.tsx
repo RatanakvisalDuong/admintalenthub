@@ -2,13 +2,14 @@
 
 import { User } from "@/app/type/user";
 import { MagnifyingGlassIcon, PlusIcon, UserIcon, EnvelopeIcon, PhoneIcon } from "@heroicons/react/16/solid";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import AddAdminDialog from "./add-admin-dialog";
 import AddEndorserDialog from "./add-endorser-dialog";
 import EditRoleDialog from "./edit-role-dialog";
 import BanConfirmationDialog from "./ban-confirmation-dialog";
+import SearchBar from "@/component/searchBar/searchBar";
 
 const roleMapping: Record<number, string> = {
     1: "Student",
@@ -41,6 +42,7 @@ export default function UserManagementComponent({ user, amount }: UserManagement
     const { data: session } = useSession();
     const [userTypeSelected, setUserTypeSelected] = useState<string | null>(null);
     const [userList, setUserList] = useState<User[]>([]);
+    const [searchResults, setSearchResults] = useState<User[]>([]); // New state for search results
     const [loading, setLoading] = useState<boolean>(false);
     const [hasMore, setHasMore] = useState<boolean>(true);
 
@@ -56,47 +58,89 @@ export default function UserManagementComponent({ user, amount }: UserManagement
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [searchTerm, setSearchTerm] = useState<string>("");
     const [successMessage, setSuccessMessage] = useState<string>("");
+    const [isSearching, setIsSearching] = useState<boolean>(false); // New state for search loading
 
     // Initialize user list only once when component mounts or user prop changes
     useEffect(() => {
         if (user) {
             if (Array.isArray(user)) {
                 setUserList(user);
+                // Reset pagination on initial load
+                if (user.length > 0) {
+                    setCurrentPage(1);
+                    setHasMore(true);
+                }
             } else {
                 setUserList([]);
+                setCurrentPage(1);
+                setHasMore(false);
             }
         } else {
             console.error("No user data provided");
             setUserList([]);
-        }
-        
-        // Only reset pagination if this is the initial load
-        if (userList.length === 0) {
             setCurrentPage(1);
-            setHasMore(true);
+            setHasMore(false);
         }
     }, [user]);
 
-    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchTerm(event.target.value);
-    };
+    // New function to handle API search - memoized to prevent infinite loops
+    const handleSearchAPI = useCallback(async (searchValue: string) => {
+        if (!searchValue.trim()) {
+            setSearchResults([]);
+            setSearchTerm("");
+            setIsSearching(false);
+            return;
+        }
+
+        try {
+            setIsSearching(true);
+            const response = await axios.get(
+                `https://talenthub.newlinkmarketing.com/api/admin_search_user`,
+                {
+                    params: { name: searchValue },
+                    headers: {
+                        Authorization: `Bearer ${session?.user.accessToken}`,
+                        Accept: 'application/json',
+                    },
+                }
+            );
+
+            const searchData = response.data;
+            if (Array.isArray(searchData)) {
+                setSearchResults(searchData);
+            } else {
+                setSearchResults([]);
+            }
+            setSearchTerm(searchValue);
+        } catch (error) {
+            console.error("Error searching users:", error);
+            setSearchResults([]);
+            setSearchTerm(searchValue);
+        } finally {
+            setIsSearching(false);
+        }
+    }, [session?.user.accessToken]);
+
+    const handleSearchChange = useCallback((searchValue: string) => {
+        handleSearchAPI(searchValue);
+    }, [handleSearchAPI]);
 
     const getRoleName = (roleId: number): string => {
         return roleMapping[roleId] || "Unknown";
     };
 
-    // Filter users without resetting the main user list
-    const filteredUsers = userList.filter(u => {
-        const matchesRole = userTypeSelected ? getRoleName(u.role_id) === userTypeSelected : true;
-        const matchesSearch = searchTerm ?
-            (u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                u.phone_number?.toLowerCase().includes(searchTerm.toLowerCase())) : true;
-        return matchesRole && matchesSearch;
-    });
+    // Updated filter logic to handle both original users and search results
+    const filteredUsers = (() => {
+        const sourceUsers = searchTerm ? searchResults : userList;
+        
+        return sourceUsers.filter(u => {
+            const matchesRole = userTypeSelected ? getRoleName(u.role_id) === userTypeSelected : true;
+            return matchesRole;
+        });
+    })();
 
     const handleShowMore = async () => {
-        if (loading || !hasMore) return;
+        if (loading || !hasMore || searchTerm) return; // Don't load more when searching
 
         try {
             setLoading(true);
@@ -162,9 +206,18 @@ export default function UserManagementComponent({ user, amount }: UserManagement
 
     const handleRoleUpdate = (userData: User, newRole: number) => {
         console.log("Updating role for user:", userData, "New role:", newRole);
+        
+        // Update in both userList and searchResults if applicable
         setUserList(prev => prev.map(u =>
             u.id === userData.id ? { ...u, role_id: newRole } : u
         ));
+        
+        if (searchTerm && searchResults.length > 0) {
+            setSearchResults(prev => prev.map(u =>
+                u.id === userData.id ? { ...u, role_id: newRole } : u
+            ));
+        }
+        
         setEditRoleDialogOpen(false);
         setSelectedUserForEdit(null);
     };
@@ -181,8 +234,8 @@ export default function UserManagementComponent({ user, amount }: UserManagement
     };
 
     // Check if we should show the "Show More" button
-    // Only show if we're not filtering (showing all users) and there are more to load
-    const shouldShowLoadMore = !userTypeSelected && !searchTerm && hasMore && filteredUsers.length > 0;
+    // Only show if we're not filtering by role, not searching, and there are more to load
+    const shouldShowLoadMore = !userTypeSelected && !searchTerm && hasMore && userList.length > 0;
 
     return (
         <div className="flex flex-col min-h-screen p-8 bg-gray-50">
@@ -205,14 +258,18 @@ export default function UserManagementComponent({ user, amount }: UserManagement
 
                 <div className="flex justify-center mb-6 w-full">
                     <div className="relative w-full max-w-full">
-                        <input
-                            type="text"
-                            placeholder="Search by name"
-                            value={searchTerm}
-                            className="w-full h-12 rounded-xl pl-12 pr-4 text-base text-gray-700 bg-white shadow-sm border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
-                            onChange={handleSearchChange}
+                        <SearchBar 
+                            onSearch={handleSearchChange} 
+                            placeHolder="Search users by name..."
                         />
-                        <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute top-1/2 left-4 transform -translate-y-1/2" />
+                        {isSearching && (
+                            <div className="absolute top-1/2 right-12 transform -translate-y-1/2">
+                                <svg className="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -281,7 +338,7 @@ export default function UserManagementComponent({ user, amount }: UserManagement
                         {searchTerm && (
                             <div>
                                 <span className="text-blue-600 font-semibold">Search:</span>
-                                <span className="ml-1 text-blue-800">"{searchTerm}"</span>
+                                <span className="ml-1 text-blue-800">"{searchTerm}" ({searchResults.length} results)</span>
                             </div>
                         )}
                     </div>
@@ -391,7 +448,8 @@ export default function UserManagementComponent({ user, amount }: UserManagement
                             </div>
                             <h3 className="text-xl font-medium text-gray-900 mb-2">No users found</h3>
                             <p className="text-base text-gray-500">
-                                {userList.length === 0 ? 'No users found in data source' : 
+                                {isSearching ? 'Searching...' :
+                                 userList.length === 0 ? 'No users found in data source' : 
                                  searchTerm ? `No users match the search term "${searchTerm}"` :
                                  userTypeSelected ? `No ${userTypeSelected.toLowerCase()} users found` :
                                  'No users match the current filter'}

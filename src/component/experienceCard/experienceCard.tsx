@@ -35,7 +35,7 @@ const ExperienceCard: React.FC<Props> = ({ experience, index, dropdownOpen, togg
 									onClick={() => toggleDropdown(experience.id)}
 								>
 									<Image src="/verified.png" alt="Verified" width={20} height={20} className="mr-2" />
-									<span className="text-sm text-black">Endorsed</span>
+									<span className="text-sm text-black">Endorsed By</span>
 								</div>
 
 								{dropdownOpen[experience.id] && (

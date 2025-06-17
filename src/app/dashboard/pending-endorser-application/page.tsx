@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import axios from 'axios';
+import { useRouter } from "next/navigation";
 
 interface EndorserApplication {
     id: number;
@@ -35,6 +36,7 @@ interface EndorserRequestResponse {
 
 export default function PendingEndorserApplicationPage() {
     const { data: session } = useSession();
+    const router = useRouter();
     const [applications, setApplications] = useState<EndorserApplication[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>('');
@@ -139,7 +141,7 @@ export default function PendingEndorserApplicationPage() {
             const response = await axios.put(
                 `${process.env.NEXT_PUBLIC_API_URL}admin_update_endorser_request/${selectedApplication.id}`,
                 {
-                    status: actionType === 'approve' ? 1 : 2
+                    status: actionType === 'approve' ? "1" : "2"
                 },
                 {
                     headers: {
@@ -163,6 +165,7 @@ export default function PendingEndorserApplicationPage() {
                 
                 // Clear success message after 4 seconds
                 setTimeout(() => setSuccessMessage(''), 4000);
+                router.refresh();
             } else {
                 setError(`Failed to ${actionType} application`);
             }
@@ -376,7 +379,7 @@ export default function PendingEndorserApplicationPage() {
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                                                 <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900">
-                                                    {selectedApplication.name}
+                                                    {selectedApplication.name} {selectedApplication.id}
                                                 </div>
                                             </div>
                                             <div>

@@ -34,7 +34,7 @@ const SkillCard: React.FC<Props> = ({ skill, index, dropdownOpen, toggleDropdown
                                     onClick={() => toggleDropdown(skill.id)}
                                 >
                                     <Image src="/verified.png" alt="Verified" width={20} height={20} className="mr-2" />
-                                    <span className="text-sm text-black">Endorsed</span>
+                                    <span className="text-sm text-black">Endorsed By</span>
                                 </div>
 
                                 {dropdownOpen[skill.id] && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { UserPlus, Code, XIcon, ChevronRight, ChevronLeft, Globe, Lock } from "lucide-react";
+import { UserPlus, Code, XIcon, ChevronRight, ChevronLeft, Globe, Lock, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ArrowLeftCircleIcon, ArrowRightCircleIcon } from "@heroicons/react/24/solid";
 import Image from "next/image";
@@ -8,8 +8,10 @@ import { ArrowDownTrayIcon, LinkIcon } from "@heroicons/react/24/solid";
 import TextEditor from "./text-editor";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Endorser } from "@/app/type/endorser";
 import axios from "axios";
+import AppBar from "@/component/appbar/appbar";
 
 interface ProjectPageComponentProps {
     projectData: any;
@@ -17,6 +19,7 @@ interface ProjectPageComponentProps {
 
 export default function ProjectPageComponent({ projectData }: ProjectPageComponentProps) {
     const { data: session } = useSession();
+    const router = useRouter();
     const userId = session?.user.id;
     const isOwner = projectData.google_id === userId;
 
@@ -34,7 +37,6 @@ export default function ProjectPageComponent({ projectData }: ProjectPageCompone
     const [confirmRemoveEndorserDialog, setConfirmRemoveEndorserDialog] = useState(false);
     const [removeCollaboratorId, setRemoveCollaboratorId] = useState<string | null>(null);
     const [removeEndorserId, setRemoveEndorserId] = useState<string | null>(null);
-
 
     const slidePairs = [];
     for (let i = 0; i < projectData.images.length; i += 2) {
@@ -57,8 +59,6 @@ export default function ProjectPageComponent({ projectData }: ProjectPageCompone
             setTimeout(() => setIsTransitioning(false), 300);
         }
     };
-
-    // const handleRemoveEndorser = (googleId: string) => {
 
     useEffect(() => {
         const interval = setInterval(nextSlide, 5000);
@@ -92,39 +92,13 @@ export default function ProjectPageComponent({ projectData }: ProjectPageCompone
         setTimeout(() => setSuccessMessage(""), 4000);
     };
 
-    const handleVisibilityToggle = async (isChecked: boolean) => {
-        try {
-            setIsPublic(isChecked);
-
-            const response = await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL}update_project_visibility/${projectData.project_id}`,
-                {
-                    visibility_status: isChecked ? "1" : "0",
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${session?.user.accessToken}`,
-                    },
-                }
-            );
-
-            console.log("Visibility response:", response);
-
-            if (response.status === 200) {
-                displaySuccessMessage(`Project visibility changed to ${isChecked ? 'private' : 'public'}`);
-            } else {
-                setIsPublic(!isChecked);
-                displaySuccessMessage("Failed to update project visibility");
-            }
-        } catch (error) {
-            console.error("Error updating project visibility:", error);
-            setIsPublic(!isChecked);
-            displaySuccessMessage("Failed to update project visibility");
-        }
+    const handleGoBack = () => {
+        router.back();
     };
 
     return (
         <div className="bg-[#E8E8E8] w-screen h-screen overflow-hidden fixed">
+            <AppBar />
             <div className={`max-w-8xl mx-auto sm:px-6 lg:px-8 py-20 flex justify-between ${updateProjectDialog || addCollaboratorDialog || addEndorserDialog || confirmRemoveCollaboratorDialog || confirmRemoveEndorserDialog ? "blur-md" : ""}`}>
                 {successMessage && (
                     <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-xl shadow-md z-50 mt-18">
@@ -134,18 +108,27 @@ export default function ProjectPageComponent({ projectData }: ProjectPageCompone
                 <div className="flex justify-between w-full">
                     <div className="h-[88vh] w-[73%]">
                         <div className="h-full w-full bg-white p-4 overflow-y-auto rounded-xl shadow-md px-8">
-                            {/* Header section with title and controls */}
-                            <div className="w-full flex justify-between items-center mb-4">
-                                <p className="text-2xl font-bold text-black">{projectData.title}</p>
-                                <div className="flex items-center gap-3 text-sm text-slate-600">
-                                    <div className="flex items-center gap-1">
-                                        {!isPublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                                        <span className="font-medium">{!isPublic ? "Public" : "Private"}</span>
+                            {/* Back Button and Header section */}
+                            <div className="w-full flex items-center mb-4">
+                                <button
+                                    onClick={handleGoBack}
+                                    className="mr-4 p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors duration-200 flex items-center gap-2 text-gray-600 hover:text-gray-800 cursor-pointer shadow-sm hover:shadow-md"
+                                >
+                                    <ArrowLeft className="w-4 h-4" />
+                                    <span className="text-sm font-medium">Back</span>
+                                </button>
+                                <div className="flex-1 flex justify-between items-center">
+                                    <p className="text-2xl font-bold text-black">{projectData.title}</p>
+                                    <div className="flex items-center gap-3 text-sm text-slate-600">
+                                        <div className="flex items-center gap-1">
+                                            {!isPublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                                            <span className="font-medium">{!isPublic ? "Public" : "Private"}</span>
+                                        </div>
+                                        <div className="w-1 h-1 bg-slate-400 rounded-full"></div>
+                                        <span>{projectData.collaborators?.filter((e: any) => e.collaboration_status == 2).length || 0} collaborators</span>
+                                        <div className="w-1 h-1 bg-slate-400 rounded-full"></div>
+                                        <span>{projectData.endorsers?.filter((e: any) => e.endorsement_status === 2).length || 0} endorsers</span>
                                     </div>
-                                    <div className="w-1 h-1 bg-slate-400 rounded-full"></div>
-                                    <span>{projectData.collaborators?.filter((e: any) => e.collaboration_status == 2).length || 0} collaborators</span>
-                                    <div className="w-1 h-1 bg-slate-400 rounded-full"></div>
-                                    <span>{projectData.endorsers?.filter((e: any) => e.endorsement_status === 2).length || 0} endorsers</span>
                                 </div>
                             </div>
 

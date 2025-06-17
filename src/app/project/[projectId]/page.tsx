@@ -12,9 +12,8 @@ export default async function Page({ params }: { params: Promise<{ projectId: st
   let projectData;
   
   try {
-    const response = await axios.post(
+    const response = await axios.get(
       `${process.env.NEXT_PUBLIC_API_URL}admin_view_project_detail/${projectId}`,
-      {}, // Empty body for POST request
       {
         headers: {
           Authorization: `Bearer ${session?.user?.accessToken}`

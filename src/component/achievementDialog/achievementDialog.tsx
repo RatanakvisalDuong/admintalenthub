@@ -67,7 +67,7 @@ const CertificateDialog: React.FC<Props> = ({ owner, onClose, achievement, onEdi
                             <div className="relative" onClick={toggleDropdown}>
                                 <div className="py-2 px-4 bg-[#C0DDEC] rounded-full flex items-center cursor-pointer mr-4">
                                     <Image src="/verified.png" alt="Verified" width={20} height={20} className="mr-2" />
-                                    <span className="text-sm text-black font-bold">Endorsed</span>
+                                    <span className="text-sm text-black font-bold">Endorsed By</span>
                                 </div>
 
                                 {dropdownOpen && (

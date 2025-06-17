@@ -450,11 +450,12 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
     );
 
     return (
-        <div className="flex flex-col h-full p-8 pb-16">
-            <h1 className="text-2xl font-bold mb-4">Portfolio Management</h1>
+        <div className="flex flex-col h-full p-4 md:p-8 pb-16">
+            <h1 className="text-xl md:text-2xl font-bold mb-4">Portfolio Management</h1>
 
-            <div className='flex mt-4 justify-between'>
-                <div className='w-78 h-max bg-white shadow-md rounded-lg p-4'>
+            <div className='flex flex-col lg:flex-row mt-4 gap-4'>
+                {/* Sidebar Navigation */}
+                <div className='w-full lg:w-78 h-max bg-white shadow-md rounded-lg p-4'>
                     <div
                         className={`w-full h-10 p-2 cursor-pointer rounded-sm ${selected === 'Portfolio' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
                         onClick={() => {
@@ -474,7 +475,9 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                         Project
                     </div>
                 </div>
-                <div className='w-full ml-4'>
+
+                {/* Main Content */}
+                <div className='w-full'>
                     {selected === 'Portfolio' && (
                         <>
                             {/* Portfolio search bar */}
@@ -483,19 +486,19 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                             </div>
 
                             {/* Filter options */}
-                            <div className='h-12 bg-white shadow-md rounded-lg mb-4'>
-                                <div className='flex justify-between items-center h-full'>
-                                    <div className="flex items-center">
-                                        <h1 className='font-bold text-lg ml-4'>
-                                            Filter by:
-                                        </h1>
+                            <div className='min-h-12 bg-white shadow-md rounded-lg mb-4 p-4'>
+                                <div className='flex flex-col sm:flex-row items-start sm:items-center gap-4'>
+                                    <h1 className='font-bold text-lg'>
+                                        Filter by:
+                                    </h1>
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                                         <div
-                                            className={`hover:cursor-pointer p-2 ml-4 rounded-sm ${userTypeSelected === 'Student' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
+                                            className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Student' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
                                             onClick={() => handleUserTypeSelection('Student')}
                                         >
                                             Student
                                         </div>
-                                        <div className='w-[1px] h-8 bg-gray-700 mx-4'></div>
+                                        <div className='hidden sm:block w-[1px] h-8 bg-gray-700'></div>
                                         <div
                                             className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Endorser' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
                                             onClick={() => handleUserTypeSelection('Endorser')}
@@ -506,7 +509,8 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-3 gap-8 mb-8">
+                            {/* Portfolio Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-8 mb-8">
                                 {isLoading && portfolioData.length === 0 ? (
                                     <div className="col-span-full text-center py-8">
                                         <p className="text-gray-500">Loading portfolios...</p>
@@ -642,19 +646,19 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                             </div>
 
                             {/* Filter options for projects */}
-                            <div className='h-12 bg-white shadow-md rounded-lg mb-4'>
-                                <div className='flex justify-between items-center h-full'>
-                                    <div className="flex items-center">
-                                        <h1 className='font-bold text-lg ml-4'>
-                                            Filter by:
-                                        </h1>
+                            <div className='min-h-12 bg-white shadow-md rounded-lg mb-4 p-4'>
+                                <div className='flex flex-col sm:flex-row items-start sm:items-center gap-4'>
+                                    <h1 className='font-bold text-lg'>
+                                        Filter by:
+                                    </h1>
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                                         <div
-                                            className={`hover:cursor-pointer p-2 ml-4 rounded-sm ${userTypeSelected === 'Student' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
+                                            className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Student' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
                                             onClick={() => handleUserTypeSelection('Student')}
                                         >
                                             Student
                                         </div>
-                                        <div className='w-[1px] h-8 bg-gray-700 mx-4'></div>
+                                        <div className='hidden sm:block w-[1px] h-8 bg-gray-700'></div>
                                         <div
                                             className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Endorser' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
                                             onClick={() => handleUserTypeSelection('Endorser')}
@@ -665,7 +669,8 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-3 gap-8 mb-8">
+                            {/* Project Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-8 mb-8">
                                 {isLoading && projectData.length === 0 ? (
                                     <div className="col-span-full text-center py-8">
                                         <p className="text-gray-500">Loading projects...</p>
@@ -922,6 +927,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                     )
                                 )}
                             </div>
+                            
                             <div className="flex justify-center items-center mt-2 mb-8">
                                 {!isProjectSearchActive && !isFilterApplied && hasMoreProjects && (
                                     <button
