@@ -200,6 +200,17 @@ export default function UserManagementComponent({ user, amount }: UserManagement
 };
 
     const handleAddAdmin = (formData: any) => {
+        const response = axios.post(
+            `${process.env.NEXT_PUBLIC_API_URL}admin/create_admin_account`,
+            formData,
+            {
+                headers: {
+                    Authorization: `Bearer ${session?.user.accessToken}`,
+                    Accept: 'application/json',
+                },
+            }
+        );
+        setSuccessMessage("Admin added successfully!");
         setAddAdminDialogOpen(false);
     };
 
@@ -430,28 +441,35 @@ export default function UserManagementComponent({ user, amount }: UserManagement
                                     </div>
                                 </div>
 
-                                {/* Actions */}
-                                <div className="col-span-2 flex items-center space-x-2">
-                                    <button
-                                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200 shadow-sm"
-                                        onClick={() => handleEditClick(userItem)}
-                                    >
-                                        Update
-                                    </button>
-                                    {userItem.status == 1 ? 
-                                        <button 
-                                            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors duration-200 shadow-sm"
-                                            onClick={() => handleBanClick(userItem)}
-                                        >
-                                            Ban
-                                        </button> : 
-                                        <button 
-                                            className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors duration-200 shadow-sm"
-                                            onClick={() => handleBanClick(userItem)}
-                                        >
-                                            Unban
-                                        </button>
-                                    }
+                                <div className="col-span-2 flex items-center">
+                                    {userItem.google_id != null ? (
+                                        <div className="flex space-x-2">
+                                            <button
+                                                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors duration-200 shadow-sm"
+                                                onClick={() => handleEditClick(userItem)}
+                                            >
+                                                Update
+                                            </button>
+                                            {userItem.status == 1 ? 
+                                                <button 
+                                                    className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors duration-200 shadow-sm"
+                                                    onClick={() => handleBanClick(userItem)}
+                                                >
+                                                    Ban
+                                                </button> : 
+                                                <button 
+                                                    className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors duration-200 shadow-sm"
+                                                    onClick={() => handleBanClick(userItem)}
+                                                >
+                                                    Unban
+                                                </button>
+                                            }
+                                        </div>
+                                    ) : (
+                                        <div className="px-3 py-2 bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-md">
+                                            User hasn't logged in yet
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))
@@ -527,7 +545,7 @@ export default function UserManagementComponent({ user, amount }: UserManagement
             <AddAdminDialog
                 isOpen={addAdminDialogOpen}
                 onClose={() => setAddAdminDialogOpen(false)}
-                onSubmit={handleAddAdmin}
+                setSuccessMessage={displaySuccessMessage}
             />
 
             <AddEndorserDialog

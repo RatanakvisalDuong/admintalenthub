@@ -14,7 +14,6 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
     const { data: session } = useSession();
     const [selected, setSelected] = useState('Portfolio');
     const [userTypeSelected, setUserTypeSelected] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
     const [filteredProjects, setFilteredProjects] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [portfolioPage, setPortfolioPage] = useState(1);
@@ -29,11 +28,9 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
     const [lastSearchedProjectTerm, setLastSearchedProjectTerm] = useState<string>('');
     const [isPortfolioSearchActive, setIsPortfolioSearchActive] = useState(false);
     const [isProjectSearchActive, setIsProjectSearchActive] = useState(false);
-    const [resetSearch, setResetSearch] = useState(false);
 
     const isFilterApplied = userTypeSelected;
 
-    // Filter portfolios based on local data
     const filteredPortfolios = useMemo(() => {
         let result = Array.isArray(portfolioData) ? portfolioData : [];
 
@@ -46,7 +43,6 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         return result;
     }, [portfolioData, userTypeSelected]);
 
-    // Filter portfolio search results by user type
     const filteredPortfolioSearchResults = useMemo(() => {
         if (!portfolioSearchResults || !Array.isArray(portfolioSearchResults)) return [];
 
@@ -61,13 +57,28 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         return results;
     }, [portfolioSearchResults, userTypeSelected]);
 
-    // Filter project search results
+    // Updated project filtering logic
+    const filteredProjectsData = useMemo(() => {
+        let result = Array.isArray(projectData) ? projectData : [];
+
+        if (userTypeSelected) {
+            result = result.filter(item => {
+                const owner = getProjectOwner(item.portfolio_id);
+                if (owner) {
+                    if (userTypeSelected === 'Student' && owner.role !== 1) return false;
+                    if (userTypeSelected === 'Endorser' && owner.role !== 2) return false;
+                }
+                return true;
+            });
+        }
+
+        return result;
+    }, [projectData, userTypeSelected, portfolio]);
+
     const filteredProjectSearchResults = useMemo(() => {
         if (!projectSearchResults || !Array.isArray(projectSearchResults)) return [];
-
         let results = projectSearchResults;
-
-        // Apply user type filter if needed for projects
+        
         if (userTypeSelected) {
             results = results.filter((item: any) => {
                 const owner = getProjectOwner(item.portfolio_id);
@@ -80,20 +91,17 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         }
 
         return results;
-    }, [projectSearchResults, userTypeSelected]);
+    }, [projectSearchResults, userTypeSelected, portfolio]);
 
-    // Initialize project data and apply filters correctly
     useEffect(() => {
         if (Array.isArray(project)) {
-            // Add currentImageIndex to each project if not present
             const projectsWithImageIndex = project.map(item => ({
                 ...item,
                 currentImageIndex: item.currentImageIndex || 0
             }));
-            
             setProjectData(projectsWithImageIndex);
             
-            // Filter projects
+            // Remove the filtered projects logic from here since we're handling it in the useMemo above
             const filtered: any = projectsWithImageIndex.filter(item => {
                 if (userTypeSelected && item.portfolio_id) {
                     const owner = getProjectOwner(item.portfolio_id);
@@ -196,21 +204,17 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
             setLastSearchedPortfolioTerm('');
             return;
         }
-
         if (name === lastSearchedPortfolioTerm) {
             return;
         }
-
         try {
             setIsLoading(true);
             setLastSearchedPortfolioTerm(name);
-
             const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}admin_search_portfolio?name=${name}`, {
                 headers: {
                     Authorization: `Bearer ${session?.user.accessToken}`,
                 },
             });
-
             if (response.data && Array.isArray(response.data)) {
                 setPortfolioSearchResults(response.data);
             } else if (response.data && response.data.data) {
@@ -233,34 +237,30 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
             setLastSearchedProjectTerm('');
             return;
         }
-
         if (name === lastSearchedProjectTerm) {
             return;
         }
-
         try {
             setIsLoading(true);
             setLastSearchedProjectTerm(name);
-
             const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}admin_search_project?name=${name}`, {
                 headers: {
                     Authorization: `Bearer ${session?.user.accessToken}`,
                 },
             });
-
+            
             let searchResults = [];
             if (response.data && Array.isArray(response.data)) {
                 searchResults = response.data;
             } else if (response.data && response.data.data) {
                 searchResults = response.data.data;
             }
-
-            // Add currentImageIndex to search results
+            
             const searchResultsWithImageIndex = searchResults.map((item: any) => ({
                 ...item,
                 currentImageIndex: 0
             }));
-
+            
             setProjectSearchResults(searchResultsWithImageIndex);
             setIsProjectSearchActive(true);
         } catch (error) {
@@ -299,58 +299,11 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         setLastSearchedProjectTerm('');
     };
 
-    // Handle image navigation for projects
-    const handleImageNavigation = (projectId: any, direction: 'prev' | 'next', dataSource: 'main' | 'search' | 'filtered') => {
-        if (dataSource === 'search') {
-            setProjectSearchResults((prevResults: any) => {
-                if (!prevResults) return prevResults;
-                
-                return prevResults.map((project: any) => {
-                    if (project.project_id === projectId && project.images && project.images.length > 1) {
-                        const currentIndex = project.currentImageIndex || 0;
-                        let newIndex;
-                        
-                        if (direction === 'prev') {
-                            newIndex = currentIndex === 0 ? project.images.length - 1 : currentIndex - 1;
-                        } else {
-                            newIndex = (currentIndex + 1) % project.images.length;
-                        }
-                        
-                        return { ...project, currentImageIndex: newIndex };
-                    }
-                    return project;
-                });
-            });
-        } else {
-            setProjectData((prevData: any) => {
-                return prevData.map((project: any) => {
-                    if (project.project_id === projectId && project.images && project.images.length > 1) {
-                        const currentIndex = project.currentImageIndex || 0;
-                        let newIndex;
-                        
-                        if (direction === 'prev') {
-                            newIndex = currentIndex === 0 ? project.images.length - 1 : currentIndex - 1;
-                        } else {
-                            newIndex = (currentIndex + 1) % project.images.length;
-                        }
-                        
-                        return { ...project, currentImageIndex: newIndex };
-                    }
-                    return project;
-                });
-            });
-        }
-    };
-
     return (
         <div className="flex flex-col h-full p-4 md:p-8 pb-16">
-            <h1 className="text-xl md:text-2xl font-bold mb-4">Portfolio Management</h1>
-
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">User Management</h1>
+            <p className="text-lg text-gray-600">Manage and oversee all portfolios</p>
             <div className='flex flex-col lg:flex-row mt-4 gap-4'>
-                {/* Sidebar Navigation */}
-                
-
-                {/* Main Content */}
                 <div className='w-full'>
                     <div className='w-full lg:w-full h-max bg-white shadow-md rounded-lg px-4 py-3 flex mb-4'>
                     <div
@@ -374,7 +327,6 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                 </div>
                     {selected === 'Portfolio' && (
                         <>
-                            {/* Portfolio search bar */}
                             <div className="mb-4">
                                 <SearchBar onSearch={handleSearchPortfolio} />
                             </div>
@@ -400,15 +352,12 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Portfolio Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-8 mb-8">
                                 {isLoading && portfolioData.length === 0 ? (
                                     <div className="col-span-full text-center py-8">
                                         <p className="text-gray-500">Loading portfolios...</p>
                                     </div>
                                 ) : isPortfolioSearchActive ? (
-                                    // Display filtered search results
                                     filteredPortfolioSearchResults.length > 0 ? (
                                         filteredPortfolioSearchResults.map((item: any) => (
                                             <Link
@@ -432,7 +381,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                     <div className="flex-grow">
                                                         <div className="flex flex-col items-center mt-3 space-y-3">
                                                             <Image
-                                                                src={item.photo}
+                                                                src={item.photo || ""}
                                                                 alt="Profile Picture"
                                                                 width={100}
                                                                 height={100}
@@ -461,7 +410,6 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                         </div>
                                     )
                                 ) : (
-                                    // Display filtered portfolios based on user type selection
                                     filteredPortfolios.length > 0 ? (
                                         filteredPortfolios.map((item) => (
                                             <Link
@@ -484,13 +432,19 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                     </div>
                                                     <div className="flex-grow">
                                                         <div className="flex flex-col items-center mt-3 space-y-3">
-                                                            <Image
-                                                                src={item.photo}
-                                                                alt="Profile Picture"
-                                                                width={100}
-                                                                height={100}
-                                                                className="rounded-lg aspect-square object-cover border border-gray-300"
-                                                            />
+                                                            {item.photo  == null || item.photo === '' ? (
+                                                                <div className="w-[100px] h-[100px] rounded-lg aspect-square bg-white border border-gray-300 flex items-center justify-center">
+                                                                    <i className="fas fa-user text-gray-300 text-3xl"></i>
+                                                                </div>
+                                                            ) : (
+                                                                <Image
+                                                                    src={item.photo}
+                                                                    alt="Profile Picture"
+                                                                    width={100}
+                                                                    height={100}
+                                                                    className="rounded-lg aspect-square object-cover border border-gray-300"
+                                                                />
+                                                            )}
                                                             <div className="w-full space-y-2 text-center">
                                                                 <p className="text-base font-semibold">{item.name}</p>
                                                                 <div className="text-sm text-gray-600">
@@ -519,7 +473,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                             <div className="flex justify-center items-center mt-2 mb-8">
                                 {!isPortfolioSearchActive && !isFilterApplied && hasMorePortfolios && (
                                     <button
-                                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-500 hover:text-white hover:scale-105 transition-all duration-300 ease-in-out cursor-pointer group disabled:opacity-50"
+                                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:text-white hover:scale-105 transition-all duration-300 ease-in-out cursor-pointer"
                                         onClick={loadMorePortfolios}
                                         disabled={isLoading}
                                     >
@@ -547,7 +501,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                             <Link
                                                 key={item.project_id}
                                                 className="w-full rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
-                                                href={`project/${item.project_id}`}
+                                                href={`/project/${item.project_id}`}
                                             >
                                                 <div className="flex flex-col h-full">
                                                     <div className="flex justify-end mb-2">
@@ -560,30 +514,102 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                     </div>
                                                     <div className="flex-grow">
                                                         <div className="flex flex-col items-center mt-3 space-y-3">
-                                                            <Image
-                                                                src="/api/placeholder/400/320"
-                                                                alt={item.title}
-                                                                width={100}
-                                                                height={100}
-                                                                className="rounded-lg aspect-square object-cover border border-gray-300"
-                                                            />
-
-                                                            <div className="w-full space-y-2 text-center">
-                                                                <p className="text-base font-semibold">{item.title}</p>
-
-                                                                <div className="text-sm text-gray-600">
-                                                                    {item.created_at && (
-                                                                        <p><span className="font-bold">Created:</span> {new Date(item.created_at).toLocaleDateString()}</p>
+                                                            <div className="relative w-full">
+                                                                <div className="relative w-full h-[140px] overflow-hidden rounded-lg border border-gray-300">
+                                                                    {item.images && item.images.length > 0 ? (
+                                                                        <div className="relative w-full h-full">
+                                                                            {item.images.map((image: any, index: number) => (
+                                                                                <Image
+                                                                                    key={index}
+                                                                                    src={image.image_url || ""}
+                                                                                    alt={`${item.title} - image ${index + 1}`}
+                                                                                    width={400}
+                                                                                    height={320}
+                                                                                    className={`w-full h-full object-cover absolute top-0 left-0 transition-opacity duration-300`}
+                                                                                    style={{
+                                                                                        opacity: index === (item.currentImageIndex || 0) ? 1 : 0,
+                                                                                        zIndex: index === (item.currentImageIndex || 0) ? 1 : 0
+                                                                                    }}
+                                                                                />
+                                                                            ))}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                                                                            <Image
+                                                                                src="/api/placeholder/400/320"
+                                                                                alt={item.title || "Project image"}
+                                                                                width={400}
+                                                                                height={320}
+                                                                                className="w-full h-full object-cover"
+                                                                            />
+                                                                        </div>
                                                                     )}
-                                                                    {item.portfolio_id && (
-                                                                        <p>
-                                                                            <span className="font-bold">Owner:</span>{' '}
-                                                                            {getProjectOwner(item.portfolio_id)?.name || 'Unknown'}
-                                                                            {getProjectOwner(item.portfolio_id)?.role === 2 && (
-                                                                                <i className="fas fa-check-circle ml-1 text-blue-600"></i>
-                                                                            )}
-                                                                        </p>
+                                                                    {item.images && item.images.length > 1 && (
+                                                                        <>
+                                                                            <button
+                                                                                className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-r-md hover:bg-opacity-70 transition-opacity z-10"
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    e.stopPropagation();
+                                                                                    const currentIndex = item.currentImageIndex || 0;
+                                                                                    const newIndex = currentIndex === 0 ? item.images.length - 1 : currentIndex - 1;
+
+                                                                                    const updatedSearchResults = projectSearchResults.map((project: any) => {
+                                                                                        if (project.project_id === item.project_id) {
+                                                                                            return { ...project, currentImageIndex: newIndex };
+                                                                                        }
+                                                                                        return project;
+                                                                                    });
+                                                                                    setProjectSearchResults(updatedSearchResults);
+                                                                                }}
+                                                                            >
+                                                                                <i className="fas fa-chevron-left text-xs"></i>
+                                                                            </button>
+                                                                            <button
+                                                                                className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-l-md hover:bg-opacity-70 transition-opacity z-10"
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    e.stopPropagation();
+                                                                                    const currentIndex = item.currentImageIndex || 0;
+                                                                                    const newIndex = (currentIndex + 1) % item.images.length;
+
+                                                                                    const updatedSearchResults = projectSearchResults.map((project: any) => {
+                                                                                        if (project.project_id === item.project_id) {
+                                                                                            return { ...project, currentImageIndex: newIndex };
+                                                                                        }
+                                                                                        return project;
+                                                                                    });
+                                                                                    setProjectSearchResults(updatedSearchResults);
+                                                                                }}
+                                                                            >
+                                                                                <i className="fas fa-chevron-right text-xs"></i>
+                                                                            </button>
+                                                                            <div className="absolute bottom-1 left-0 right-0 flex justify-center">
+                                                                                <div className="bg-black bg-opacity-50 rounded-full px-2 py-0.5 text-xs text-white">
+                                                                                    {(item.currentImageIndex || 0) + 1}/{item.images.length}
+                                                                                </div>
+                                                                            </div>
+                                                                        </>
                                                                     )}
+                                                                </div>
+
+                                                                <div className="w-full space-y-2 text-center mt-3">
+                                                                    <p className="text-base font-semibold">{item.title}</p>
+
+                                                                    <div className="text-sm text-gray-600">
+                                                                        {item.created_at && (
+                                                                            <p><span className="font-bold">Created:</span> {new Date(item.created_at).toLocaleDateString()}</p>
+                                                                        )}
+                                                                        {item.portfolio_id && (
+                                                                            <p>
+                                                                                <span className="font-bold">Owner:</span>{' '}
+                                                                                {getProjectOwner(item.portfolio_id)?.name || item.user_name || 'Unknown'}
+                                                                                {getProjectOwner(item.portfolio_id)?.role === 2 && (
+                                                                                    <i className="fas fa-check-circle ml-1 text-blue-600"></i>
+                                                                                )}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -599,65 +625,9 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                             }
                                         </div>
                                     )
-                                ) : userTypeSelected ? (
-                                    filteredProjects.length > 0 ? (
-                                        filteredProjects.map((item: any) => (
-                                            <Link
-                                                key={item.project_id}
-                                                className="w-full rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
-                                                href={`/project/${item.project_id}`}
-                                            >
-                                                <div className="flex flex-col h-full">
-                                                    <div className="flex justify-end mb-2">
-                                                        <div
-                                                            className={`h-6 flex justify-center items-center text-white text-xs rounded-xl ${item.project_visibility_status === 1 ? 'bg-green-500' : 'bg-gray-500'} px-2`}
-                                                        >
-                                                            <i className={`fas ${item.project_visibility_status === 1 ? 'fa-eye' : 'fa-eye-slash'} mr-2`}></i>
-                                                            <span>{getVisibilityLabel(item.project_visibility_status)}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex-grow">
-                                                        <div className="flex flex-col items-center mt-3 space-y-3">
-                                                            <Image
-                                                                src="/api/placeholder/400/320"
-                                                                alt={item.title}
-                                                                width={100}
-                                                                height={100}
-                                                                className="rounded-lg aspect-square object-cover border border-gray-300"
-                                                            />
-
-                                                            <div className="w-full space-y-2 text-center">
-                                                                <p className="text-base font-semibold">{item.title}</p>
-
-                                                                <div className="text-sm text-gray-600">
-                                                                    {item.created_at && (
-                                                                        <p><span className="font-bold">Created:</span> {new Date(item.created_at).toLocaleDateString()}</p>
-                                                                    )}
-                                                                    {item.portfolio_id && (
-                                                                        <p>
-                                                                            <span className="font-bold">Owner:</span>{' '}
-                                                                            {getProjectOwner(item.portfolio_id)?.name || 'Unknown'}
-                                                                            {getProjectOwner(item.portfolio_id)?.role === 2 && (
-                                                                                <i className="fas fa-check-circle ml-1 text-blue-600"></i>
-                                                                            )}
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        ))
-                                    ) : (
-                                        <div className="col-span-full text-center py-8 text-gray-500">
-                                            No projects by {userTypeSelected.toLowerCase()} owners found.
-                                        </div>
-                                    )
                                 ) : (
-                                    // Display all projects
-                                    projectData.length > 0 ? (
-                                        projectData.map((item: any) => (
+                                    filteredProjectsData.length > 0 ? (
+                                        filteredProjectsData.map((item: any) => (
                                             <Link
                                                 key={item.project_id}
                                                 className="w-full rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
@@ -705,8 +675,6 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                                             />
                                                                         </div>
                                                                     )}
-
-                                                                    {/* Navigation buttons */}
                                                                     {item.images && item.images.length > 1 && (
                                                                         <>
                                                                             <button
@@ -724,8 +692,6 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                                                         }
                                                                                         return project;
                                                                                     });
-
-                                                                                    // Update state with the new array
                                                                                     setProjectData(updatedProjectData);
                                                                                 }}
                                                                             >
@@ -788,7 +754,10 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                         ))
                                     ) : (
                                         <div className="col-span-full text-center py-8 text-gray-500">
-                                            No projects found.
+                                            {userTypeSelected ?
+                                                `No projects by ${userTypeSelected.toLowerCase()} owners found.` :
+                                                'No projects found.'
+                                            }
                                         </div>
                                     )
                                 )}
@@ -797,7 +766,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                             <div className="flex justify-center items-center mt-2 mb-8">
                                 {!isProjectSearchActive && !isFilterApplied && hasMoreProjects && (
                                     <button
-                                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-500 hover:text-white hover:scale-105 transition-all duration-300 ease-in-out cursor-pointer group disabled:opacity-50"
+                                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:text-white hover:scale-105 transition-all duration-300 ease-in-out cursor-pointer"
                                         onClick={loadMoreProjects}
                                         disabled={isLoading}
                                     >
