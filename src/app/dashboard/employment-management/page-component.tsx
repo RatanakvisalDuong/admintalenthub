@@ -7,9 +7,14 @@ import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveCo
 export default function EmploymentManagementComponent({ employmentData, jobTitles, companies }: { employmentData: EmploymentData[]; jobTitles: any[]; companies: any[] }) {
     const COLORS = ['#0088FE', '#00C49F'];
 
-    const JOB_COLORS = ['#f3f4f6', '#e5e7eb'];
-
     const COMPANY_COLORS = ['#3b82f6', '#1d4ed8'];
+
+    const calculateChartHeight = (companies: any[]) => {
+    const maxNameLength = Math.max(...companies.map(company => company.title?.length || 0));
+    const baseHeight = 400;
+    const additionalHeight = Math.max(0, (maxNameLength - 10) * 3); // 3px per character over 10
+    return Math.min(baseHeight + additionalHeight, 600); // Cap at 600px
+};
 
     return (
         <div className="flex flex-col h-full p-8 pb-4 overflow-y-auto">
@@ -80,7 +85,7 @@ export default function EmploymentManagementComponent({ employmentData, jobTitle
             {/* Top 10 Companies Chart */}
             <div className="bg-white shadow-sm border border-gray-200 rounded-lg w-full mt-8 mb-2">
                 <h2 className="text-lg font-semibold mb-4 text-gray-800 mt-6 ml-6">Top 10 Companies in TalentHub</h2>
-                <div className="h-96 w-full">
+                <div className="h-max w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                             data={companies}

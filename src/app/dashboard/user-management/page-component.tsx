@@ -381,7 +381,7 @@ export default function UserManagementComponent({ user, amount }: UserManagement
                 </div>
 
                 {/* Table Body - Removed max-height restriction and improved scrolling */}
-                <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 500px)' }}>
+                <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 300px)' }}>
                     {filteredUsers && filteredUsers.length > 0 ? (
                         filteredUsers.map((userItem, index) => (
                             <div key={userItem.id || index} className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150">

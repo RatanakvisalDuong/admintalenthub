@@ -342,122 +342,19 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         }
     };
 
-    // Project card component to avoid repetition
-    const ProjectCard = ({ item, dataSource }: { item: any, dataSource: 'main' | 'search' | 'filtered' }) => (
-        <Link
-            key={item.project_id}
-            className="w-full rounded-lg shadow-md bg-white p-4 text-black transform transition-transform duration-200 hover:scale-105 hover:cursor-pointer"
-            href={`/project/${item.project_id}`}
-        >
-            <div className="flex flex-col h-full">
-                <div className="flex justify-end mb-2">
-                    <div
-                        className={`h-6 flex justify-center items-center text-white text-xs rounded-xl ${item.project_visibility_status === 1 ? 'bg-green-500' : 'bg-gray-500'} px-2`}
-                    >
-                        <i className={`fas ${item.project_visibility_status === 1 ? 'fa-eye' : 'fa-eye-slash'} mr-2`}></i>
-                        <span>{getVisibilityLabel(item.project_visibility_status)}</span>
-                    </div>
-                </div>
-                <div className="flex-grow">
-                    <div className="flex flex-col items-center mt-3 space-y-3">
-                        <div className="relative w-full">
-                            {/* Image carousel */}
-                            <div className="relative w-full h-[140px] overflow-hidden rounded-lg border border-gray-300">
-                                {item.images && item.images.length > 0 ? (
-                                    <div className="relative w-full h-full">
-                                        {item.images.map((image: any, index: number) => (
-                                            <Image
-                                                key={index}
-                                                src={image.image_url || ""}
-                                                alt={`${item.title} - image ${index + 1}`}
-                                                width={400}
-                                                height={320}
-                                                className={`w-full h-full object-cover absolute top-0 left-0 transition-opacity duration-300`}
-                                                style={{
-                                                    opacity: index === (item.currentImageIndex || 0) ? 1 : 0,
-                                                    zIndex: index === (item.currentImageIndex || 0) ? 1 : 0
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                                        <Image
-                                            src="/api/placeholder/400/320"
-                                            alt={item.title || "Project image"}
-                                            width={400}
-                                            height={320}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                )}
-
-                                {/* Navigation buttons */}
-                                {item.images && item.images.length > 1 && (
-                                    <>
-                                        <button
-                                            className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-r-md hover:bg-opacity-70 transition-opacity z-10"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                handleImageNavigation(item.project_id, 'prev', dataSource);
-                                            }}
-                                        >
-                                            <i className="fas fa-chevron-left text-xs"></i>
-                                        </button>
-                                        <button
-                                            className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-l-md hover:bg-opacity-70 transition-opacity z-10"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                handleImageNavigation(item.project_id, 'next', dataSource);
-                                            }}
-                                        >
-                                            <i className="fas fa-chevron-right text-xs"></i>
-                                        </button>
-                                        <div className="absolute bottom-1 left-0 right-0 flex justify-center">
-                                            <div className="bg-black bg-opacity-50 rounded-full px-2 py-0.5 text-xs text-white">
-                                                {(item.currentImageIndex || 0) + 1}/{item.images.length}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-
-                            <div className="w-full space-y-2 text-center mt-3">
-                                <p className="text-base font-semibold">{item.title}</p>
-
-                                <div className="text-sm text-gray-600">
-                                    {item.created_at && (
-                                        <p><span className="font-bold">Created:</span> {new Date(item.created_at).toLocaleDateString()}</p>
-                                    )}
-                                    {item.portfolio_id && (
-                                        <p>
-                                            <span className="font-bold">Owner:</span>{' '}
-                                            {getProjectOwner(item.portfolio_id)?.name || item.user_name || 'Unknown'}
-                                            {getProjectOwner(item.portfolio_id)?.role === 2 && (
-                                                <i className="fas fa-check-circle ml-1 text-[#5086ed]"></i>
-                                            )}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </Link>
-    );
-
     return (
         <div className="flex flex-col h-full p-4 md:p-8 pb-16">
             <h1 className="text-xl md:text-2xl font-bold mb-4">Portfolio Management</h1>
 
             <div className='flex flex-col lg:flex-row mt-4 gap-4'>
                 {/* Sidebar Navigation */}
-                <div className='w-full lg:w-78 h-max bg-white shadow-md rounded-lg p-4'>
+                
+
+                {/* Main Content */}
+                <div className='w-full'>
+                    <div className='w-full lg:w-full h-max bg-white shadow-md rounded-lg px-4 py-3 flex mb-4'>
                     <div
-                        className={`w-full h-10 p-2 cursor-pointer rounded-sm ${selected === 'Portfolio' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
+                        className={`w-full h-10 p-2 cursor-pointer rounded-sm ${selected === 'Portfolio' ? 'bg-blue-600 text-white' : 'text-black hover:bg-gray-100'} items-center flex justify-center`}
                         onClick={() => {
                             setSelected('Portfolio');
                             clearProjectSearch();
@@ -466,7 +363,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                         Portfolio
                     </div>
                     <div
-                        className={`w-full h-10 p-2 cursor-pointer rounded-sm ${selected === 'Project' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
+                        className={`w-full h-10 p-2 cursor-pointer rounded-sm ${selected === 'Project' ? 'bg-blue-600 text-white' : 'text-black hover:bg-gray-100'} items-center flex justify-center`}
                         onClick={() => {
                             setSelected('Project');
                             clearPortfolioSearch();
@@ -475,17 +372,12 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                         Project
                     </div>
                 </div>
-
-                {/* Main Content */}
-                <div className='w-full'>
                     {selected === 'Portfolio' && (
                         <>
                             {/* Portfolio search bar */}
                             <div className="mb-4">
                                 <SearchBar onSearch={handleSearchPortfolio} />
                             </div>
-
-                            {/* Filter options */}
                             <div className='min-h-12 bg-white shadow-md rounded-lg mb-4 p-4'>
                                 <div className='flex flex-col sm:flex-row items-start sm:items-center gap-4'>
                                     <h1 className='font-bold text-lg'>
@@ -493,14 +385,14 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                     </h1>
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                                         <div
-                                            className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Student' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
+                                            className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Student' ? 'bg-blue-600 text-white' : 'text-black hover:bg-gray-100'}`}
                                             onClick={() => handleUserTypeSelection('Student')}
                                         >
                                             Student
                                         </div>
                                         <div className='hidden sm:block w-[1px] h-8 bg-gray-700'></div>
                                         <div
-                                            className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Endorser' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
+                                            className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Endorser' ? 'bg-blue-600 text-white' : 'text-black hover:bg-gray-100'}`}
                                             onClick={() => handleUserTypeSelection('Endorser')}
                                         >
                                             Endorser
@@ -510,7 +402,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                             </div>
 
                             {/* Portfolio Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-8 mb-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-8 mb-8">
                                 {isLoading && portfolioData.length === 0 ? (
                                     <div className="col-span-full text-center py-8">
                                         <p className="text-gray-500">Loading portfolios...</p>
@@ -527,7 +419,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                 <div className="flex flex-col h-full">
                                                     <div className="flex justify-end mb-2">
                                                         {item.role === 2 ? (
-                                                            <div className="h-6 flex justify-center items-center text-white text-xs rounded-xl bg-[#5086ed] px-2">
+                                                            <div className="h-6 flex justify-center items-center text-white text-xs rounded-xl bg-blue-600 px-2">
                                                                 <i className="fas fa-check-circle mr-2"></i>
                                                                 <span>Endorser</span>
                                                             </div>
@@ -580,7 +472,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                 <div className="flex flex-col h-full">
                                                     <div className="flex justify-end mb-2">
                                                         {item.role === 2 ? (
-                                                            <div className="h-6 flex justify-center items-center text-white text-xs rounded-xl bg-[#5086ed] px-2">
+                                                            <div className="h-6 flex justify-center items-center text-white text-xs rounded-xl bg-blue-600 px-2">
                                                                 <i className="fas fa-check-circle mr-2"></i>
                                                                 <span>Endorser</span>
                                                             </div>
@@ -627,7 +519,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                             <div className="flex justify-center items-center mt-2 mb-8">
                                 {!isPortfolioSearchActive && !isFilterApplied && hasMorePortfolios && (
                                     <button
-                                        className="bg-[#5086ed] text-white px-4 py-2 rounded-md hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-500 hover:text-white hover:scale-105 transition-all duration-300 ease-in-out cursor-pointer group disabled:opacity-50"
+                                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-500 hover:text-white hover:scale-105 transition-all duration-300 ease-in-out cursor-pointer group disabled:opacity-50"
                                         onClick={loadMorePortfolios}
                                         disabled={isLoading}
                                     >
@@ -640,36 +532,10 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
 
                     {selected === 'Project' && (
                         <>
-                            {/* Project search bar */}
                             <div className="mb-4">
                                 <SearchBar onSearch={handleSearchProject} placeHolder='Search Projects...' />
                             </div>
 
-                            {/* Filter options for projects */}
-                            <div className='min-h-12 bg-white shadow-md rounded-lg mb-4 p-4'>
-                                <div className='flex flex-col sm:flex-row items-start sm:items-center gap-4'>
-                                    <h1 className='font-bold text-lg'>
-                                        Filter by:
-                                    </h1>
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                                        <div
-                                            className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Student' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
-                                            onClick={() => handleUserTypeSelection('Student')}
-                                        >
-                                            Student
-                                        </div>
-                                        <div className='hidden sm:block w-[1px] h-8 bg-gray-700'></div>
-                                        <div
-                                            className={`hover:cursor-pointer p-2 rounded-sm ${userTypeSelected === 'Endorser' ? 'bg-[#5086ed] text-white' : 'text-black hover:bg-gray-100'}`}
-                                            onClick={() => handleUserTypeSelection('Endorser')}
-                                        >
-                                            Endorser
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Project Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-8 mb-8">
                                 {isLoading && projectData.length === 0 ? (
                                     <div className="col-span-full text-center py-8">
@@ -714,7 +580,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                                             <span className="font-bold">Owner:</span>{' '}
                                                                             {getProjectOwner(item.portfolio_id)?.name || 'Unknown'}
                                                                             {getProjectOwner(item.portfolio_id)?.role === 2 && (
-                                                                                <i className="fas fa-check-circle ml-1 text-[#5086ed]"></i>
+                                                                                <i className="fas fa-check-circle ml-1 text-blue-600"></i>
                                                                             )}
                                                                         </p>
                                                                     )}
@@ -772,7 +638,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                                             <span className="font-bold">Owner:</span>{' '}
                                                                             {getProjectOwner(item.portfolio_id)?.name || 'Unknown'}
                                                                             {getProjectOwner(item.portfolio_id)?.role === 2 && (
-                                                                                <i className="fas fa-check-circle ml-1 text-[#5086ed]"></i>
+                                                                                <i className="fas fa-check-circle ml-1 text-blue-600"></i>
                                                                             )}
                                                                         </p>
                                                                     )}
@@ -908,7 +774,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                                                 <span className="font-bold">Owner:</span>{' '}
                                                                                 {getProjectOwner(item.portfolio_id)?.name || item.user_name || 'Unknown'}
                                                                                 {getProjectOwner(item.portfolio_id)?.role === 2 && (
-                                                                                    <i className="fas fa-check-circle ml-1 text-[#5086ed]"></i>
+                                                                                    <i className="fas fa-check-circle ml-1 text-blue-600"></i>
                                                                                 )}
                                                                             </p>
                                                                         )}
@@ -931,7 +797,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                             <div className="flex justify-center items-center mt-2 mb-8">
                                 {!isProjectSearchActive && !isFilterApplied && hasMoreProjects && (
                                     <button
-                                        className="bg-[#5086ed] text-white px-4 py-2 rounded-md hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-500 hover:text-white hover:scale-105 transition-all duration-300 ease-in-out cursor-pointer group disabled:opacity-50"
+                                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-500 hover:text-white hover:scale-105 transition-all duration-300 ease-in-out cursor-pointer group disabled:opacity-50"
                                         onClick={loadMoreProjects}
                                         disabled={isLoading}
                                     >

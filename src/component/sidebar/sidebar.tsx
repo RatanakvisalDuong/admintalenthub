@@ -124,7 +124,7 @@ export default function SideBar({ onSelectTabAction }: { onSelectTabAction: (id:
                         <Link
                             key={item.id}
                             href={item.path}
-                            className={`flex items-center gap-3 px-4 py-3 my-1 rounded-md cursor-pointer transition-all duration-300 relative ${isActive ? "bg-[#5086ed] text-white" : "text-black hover:bg-gray-100"
+                            className={`flex items-center gap-3 px-4 py-3 my-1 rounded-md cursor-pointer transition-all duration-300 relative ${isActive ? "bg-blue-600 text-white" : "text-black hover:bg-gray-100"
                                 }`}
                             onClick={() => onSelectTabAction(item.id)}
                         >
