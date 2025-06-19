@@ -110,12 +110,6 @@ export default function Login() {
                             </div>
                         </div>
 
-                        <div className="text-right mb-6">
-                            <a href="#" className="text-sm text-[#5086ed] hover:underline">
-                                Forgot Password?
-                            </a>
-                        </div>
-
                         {/* Error message display */}
                         {error && (
                             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-4">
