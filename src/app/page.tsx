@@ -52,9 +52,16 @@ export default function Login() {
         <div className="flex min-h-screen text-black fixed w-full">
             <div className="w-full md:w-2/5 flex flex-col justify-center p-8 md:p-16 bg-white shadow-lg">
                 <div className="max-w-md mx-auto w-full">
-                    <h1 className="text-4xl font-bold mb-1 text-black w-max mx-auto">
-                        Talent<span className="text-[#5086ed]">Hub</span>
-                    </h1>
+                    <div className="w-max mx-auto">
+
+                        <Image
+                            src="/logo.png"
+                            alt="Paragon International University Logo"
+                            width={200}
+                            height={100}
+                            className="cursor-pointer ml-4 items-center justify-center mx-auto"
+                        />
+                    </div>
                     <p className="text-lg font-medium mb-8 text-gray-800 w-max mx-auto">
                         Login into your admin account
                     </p>

@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import axios from "axios";
 import ChangePasswordDialog from "../changePasswordDialog/page"; 
+import Image from "next/image";
 
 export default function AppBar() {
 	const { data: session } = useSession();
@@ -54,10 +55,17 @@ export default function AppBar() {
 				<div className="max-w-9xl mx-auto sm:px-6 lg:px-8">
 					<div className="flex justify-between items-center h-16">
 						<Link className="flex" href="/dashboard/portfolio-management">
-							<h1 className="text-3xl font-bold text-black cursor-pointer">
+							{/* <h1 className="text-3xl font-bold text-black cursor-pointer">
 								Talent
 							</h1>
-							<h1 className="text-blue-500 text-3xl font-bold cursor-pointer">Hub</h1>
+							<h1 className="text-blue-500 text-3xl font-bold cursor-pointer">Hub</h1> */}
+							<Image
+								src="/logo.png"
+								alt="Paragon International University Logo"
+								width={200}
+								height={100}
+								className="cursor-pointer ml-4"
+							/>
 						</Link>
 
 						<div className="relative" ref={dropdownRef}>
