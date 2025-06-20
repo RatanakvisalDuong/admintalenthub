@@ -11,7 +11,8 @@ declare module "next-auth" {
             name: string | null;
             roleId: number;
             accessToken: string;
-              expires: string;
+            expires: string;
+            isSuperAdmin?: number;
         };
     }
 }
@@ -24,6 +25,7 @@ declare module "next-auth/jwt" {
         roleId: number;
         accessToken: string;
         exp: number;
+        isSuperAdmin: number;
     }
 }
 
@@ -32,6 +34,7 @@ let tempUserId = ''
 let tempToken = ''
 let tempRoleId = 0
 let tempEmail = ''
+let tempIsSuperAdmin = 0
 let tempName = ''
 
 export const authOptions: NextAuthOptions = {
@@ -79,6 +82,7 @@ export const authOptions: NextAuthOptions = {
                     tempEmail = data.email || '';
                     tempName = data.name || 'Admin';
                     tempRoleId = data.role_id || '';
+                    tempIsSuperAdmin = data.is_super_admin;
 
                     return true;
                 } catch (error: any) {
@@ -95,6 +99,7 @@ export const authOptions: NextAuthOptions = {
                 token.email = tempEmail;
                 token.name = tempName || "Admin";
                 token.roleId = tempRoleId;
+                token.isSuperAdmin = tempIsSuperAdmin || 0;
             }
 
             return token;
@@ -106,6 +111,7 @@ export const authOptions: NextAuthOptions = {
             session.user.name = token.name;
             session.user.roleId = token.roleId;
             session.user.expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+            session.user.isSuperAdmin = token.isSuperAdmin;
             return session;
         },
     },

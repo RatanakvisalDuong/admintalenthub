@@ -139,17 +139,13 @@ export default function Login() {
                 <div className="w-full max-w-lg flex flex-col items-center">
                     <h1 className="font-bold text-xl mb-6 text-center">Welcome to TalentHub Admin Panel</h1>
                     <div className="relative w-full h-80">
-                        <Image
-                            src="/piu.png"
-                            alt="Login illustration"
-                            width={150}
-                            height={300}
-                            priority
-                            style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'contain'
-                            }}
+                        <img
+                            src="/PIULogo.svg"
+                            alt="Paragon International University Logo - Premier ICT Education in Cambodia"
+                            className="w-64 h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 mx-auto"
+                            loading="eager"
+                            width="400"
+                            height="400"
                         />
                     </div>
                 </div>

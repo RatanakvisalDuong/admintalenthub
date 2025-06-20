@@ -307,13 +307,13 @@ export default function UserManagementComponent({ user, amount }: UserManagement
                             <PlusIcon className="w-5 h-5 mr-2" />
                             Add Endorser
                         </button>
-                        <button
+                        {/* <button
                             className="h-11 py-2 px-4 cursor-pointer rounded-lg text-base text-gray-700 hover:bg-blue-600 hover:text-white bg-white shadow-sm border border-gray-200 hover:border-blue-600 flex items-center transition-all duration-200 font-medium"
                             onClick={() => setAddAdminDialogOpen(true)}
                         >
                             <PlusIcon className="w-5 h-5 mr-2" />
                             Add Admin
-                        </button>
+                        </button> */}
                     </div>
                     
                     <div className="bg-white shadow-sm rounded-lg px-6 py-3 border border-gray-200">

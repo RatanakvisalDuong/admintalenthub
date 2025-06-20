@@ -8,12 +8,13 @@ import axios from 'axios';
 interface AddAdminDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    setSuccessMessage: (message: string) => void;
+    onAdminAdded: (newAdmin: any) => void;
 }
 
-const AddAdminDialog = ({ isOpen, onClose, setSuccessMessage }: AddAdminDialogProps) => {
+const AddAdminDialog = ({ isOpen, onClose, onAdminAdded }: AddAdminDialogProps) => {
     const { data: session } = useSession();
     const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -30,28 +31,44 @@ const AddAdminDialog = ({ isOpen, onClose, setSuccessMessage }: AddAdminDialogPr
         if (error) setError(null);
     };
 
+    const resetForm = () => {
+        setFormData({
+            name: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+        });
+        setError(null);
+    };
+
     const handleSubmit = async (e: any) => {
         e.preventDefault();
+        setIsLoading(true);
 
         if (formData.name === '' || formData.email === '' || formData.password === '' || formData.confirmPassword === '') {
             setError("All fields are required");
+            setIsLoading(false);
             return;
         }
 
         if (formData.password !== formData.confirmPassword) {
             setError("Password and Confirm Password do not match");
+            setIsLoading(false);
             return;
         }
 
         if (formData.password.length < 8) {
             setError("Password must be at least 8 characters long");
+            setIsLoading(false);
             return;
         }
 
         if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.email)) {
             setError("Email is not valid");
+            setIsLoading(false);
             return;
         }
+
         try {
             const response = await axios.post(
                 `${process.env.NEXT_PUBLIC_API_URL}admin/create_admin_account`,
@@ -67,31 +84,38 @@ const AddAdminDialog = ({ isOpen, onClose, setSuccessMessage }: AddAdminDialogPr
                     },
                 }
             );
-            if (response.data.success) {
-                setSuccessMessage("Admin added successfully!");
+
+            if (response.data.message === "Admin account created successfully" && response.data.admin) {
+                // Use the admin object directly from the API response
+                const newAdmin = {
+                    ...response.data.admin,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+
+                // Call the callback to update the parent component
+                onAdminAdded(newAdmin);
+                
+                // Close dialog and reset form
+                onClose();
+                resetForm();
             } else {
                 setError(response.data.message || "Failed to add admin");
             }
-            // Close the dialog
-            onClose();
-
-            // Reset form
-            setFormData({
-                name: '',
-                email: '',
-                password: '',
-                confirmPassword: '',
-            });
-        }
-        catch (err: any) {
+        } catch (err: any) {
             if (axios.isAxiosError(err)) {
                 setError(err.response?.data?.message || "An error occurred");
             } else {
                 setError("An unexpected error occurred");
             }
+        } finally {
+            setIsLoading(false);
         }
+    };
 
-
+    const handleClose = () => {
+        resetForm();
+        onClose();
     };
 
     if (!isOpen) return null;
@@ -101,7 +125,7 @@ const AddAdminDialog = ({ isOpen, onClose, setSuccessMessage }: AddAdminDialogPr
             {/* Blur backdrop */}
             <div
                 className="absolute inset-0 bg-gray-800/30 backdrop-blur-sm"
-                onClick={onClose}
+                onClick={handleClose}
             ></div>
 
             {/* Dialog content */}
@@ -109,9 +133,10 @@ const AddAdminDialog = ({ isOpen, onClose, setSuccessMessage }: AddAdminDialogPr
                 <div className="flex justify-between items-center border-b p-4">
                     <h2 className="text-lg font-semibold text-gray-800">Add Admin</h2>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="text-gray-500 hover:text-gray-700"
                         type="button"
+                        disabled={isLoading}
                     >
                         <XMarkIcon className="w-5 h-5 cursor-pointer hover:text-red-600" />
                     </button>
@@ -126,7 +151,8 @@ const AddAdminDialog = ({ isOpen, onClose, setSuccessMessage }: AddAdminDialogPr
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                disabled={isLoading}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                             />
                         </div>
 
@@ -137,7 +163,8 @@ const AddAdminDialog = ({ isOpen, onClose, setSuccessMessage }: AddAdminDialogPr
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                disabled={isLoading}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                             />
                         </div>
 
@@ -148,7 +175,8 @@ const AddAdminDialog = ({ isOpen, onClose, setSuccessMessage }: AddAdminDialogPr
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                disabled={isLoading}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                             />
                         </div>
 
@@ -159,7 +187,8 @@ const AddAdminDialog = ({ isOpen, onClose, setSuccessMessage }: AddAdminDialogPr
                                 name="confirmPassword"
                                 value={formData.confirmPassword}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                disabled={isLoading}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                             />
                         </div>
 
@@ -172,10 +201,26 @@ const AddAdminDialog = ({ isOpen, onClose, setSuccessMessage }: AddAdminDialogPr
 
                     <div className="mt-6 flex justify-end space-x-3">
                         <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-600 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            type="button"
+                            onClick={handleClose}
+                            disabled={isLoading}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
                         >
-                            Add Admin
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                    Adding...
+                                </>
+                            ) : (
+                                'Add Admin'
+                            )}
                         </button>
                     </div>
                 </form>
