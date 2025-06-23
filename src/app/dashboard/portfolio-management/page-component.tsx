@@ -57,28 +57,10 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         return results;
     }, [portfolioSearchResults, userTypeSelected]);
 
-    // Updated project filtering logic
-    const filteredProjectsData = useMemo(() => {
-        let result = Array.isArray(projectData) ? projectData : [];
-
-        if (userTypeSelected) {
-            result = result.filter(item => {
-                const owner = getProjectOwner(item.portfolio_id);
-                if (owner) {
-                    if (userTypeSelected === 'Student' && owner.role !== 1) return false;
-                    if (userTypeSelected === 'Endorser' && owner.role !== 2) return false;
-                }
-                return true;
-            });
-        }
-
-        return result;
-    }, [projectData, userTypeSelected, portfolio]);
-
     const filteredProjectSearchResults = useMemo(() => {
         if (!projectSearchResults || !Array.isArray(projectSearchResults)) return [];
         let results = projectSearchResults;
-        
+
         if (userTypeSelected) {
             results = results.filter((item: any) => {
                 const owner = getProjectOwner(item.portfolio_id);
@@ -100,7 +82,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                 currentImageIndex: item.currentImageIndex || 0
             }));
             setProjectData(projectsWithImageIndex);
-            
+
             // Remove the filtered projects logic from here since we're handling it in the useMemo above
             const filtered: any = projectsWithImageIndex.filter(item => {
                 if (userTypeSelected && item.portfolio_id) {
@@ -130,7 +112,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         try {
             setIsLoading(true);
             const nextPage = portfolioPage + 1;
-            
+
             const response = await axios.get(
                 `${process.env.NEXT_PUBLIC_API_URL}admin_view_all_portfolio`,
                 {
@@ -143,7 +125,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                     },
                 }
             );
-            
+
             const newPortfolios = response.data || [];
             if (newPortfolios.length === 0) {
                 setHasMorePortfolios(false);
@@ -186,7 +168,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                     ...item,
                     currentImageIndex: 0
                 }));
-                
+
                 setProjectData((prevData: any) => [...prevData, ...projectsWithImageIndex]);
                 setProjectPage(nextPage);
             }
@@ -248,19 +230,19 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                     Authorization: `Bearer ${session?.user.accessToken}`,
                 },
             });
-            
+
             let searchResults = [];
             if (response.data && Array.isArray(response.data)) {
                 searchResults = response.data;
             } else if (response.data && response.data.data) {
                 searchResults = response.data.data;
             }
-            
+
             const searchResultsWithImageIndex = searchResults.map((item: any) => ({
                 ...item,
                 currentImageIndex: 0
             }));
-            
+
             setProjectSearchResults(searchResultsWithImageIndex);
             setIsProjectSearchActive(true);
         } catch (error) {
@@ -299,32 +281,49 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
         setLastSearchedProjectTerm('');
     };
 
+    const filteredProjectsData = useMemo(() => {
+        let result = Array.isArray(projectData) ? projectData : [];
+
+        if (userTypeSelected) {
+            result = result.filter(item => {
+                const owner = getProjectOwner(item.portfolio_id);
+                if (owner) {
+                    if (userTypeSelected === 'Student' && owner.role !== 1) return false;
+                    if (userTypeSelected === 'Endorser' && owner.role !== 2) return false;
+                }
+                return true;
+            });
+        }
+
+        return result;
+    }, [projectData, userTypeSelected, portfolio]);
+
     return (
         <div className="flex flex-col h-full p-4 md:p-8 pb-16">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">User Management</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Portfolio Management</h1>
             <p className="text-lg text-gray-600">Manage and oversee all portfolios</p>
             <div className='flex flex-col lg:flex-row mt-4 gap-4'>
                 <div className='w-full'>
                     <div className='w-full lg:w-full h-max bg-white shadow-md rounded-lg px-4 py-3 flex mb-4'>
-                    <div
-                        className={`w-full h-10 p-2 cursor-pointer rounded-sm ${selected === 'Portfolio' ? 'bg-blue-600 text-white' : 'text-black hover:bg-gray-100'} items-center flex justify-center`}
-                        onClick={() => {
-                            setSelected('Portfolio');
-                            clearProjectSearch();
-                        }}
-                    >
-                        Portfolio
+                        <div
+                            className={`w-full h-10 p-2 cursor-pointer rounded-sm ${selected === 'Portfolio' ? 'bg-blue-600 text-white' : 'text-black hover:bg-gray-100'} items-center flex justify-center`}
+                            onClick={() => {
+                                setSelected('Portfolio');
+                                clearProjectSearch();
+                            }}
+                        >
+                            Portfolio
+                        </div>
+                        <div
+                            className={`w-full h-10 p-2 cursor-pointer rounded-sm ${selected === 'Project' ? 'bg-blue-600 text-white' : 'text-black hover:bg-gray-100'} items-center flex justify-center`}
+                            onClick={() => {
+                                setSelected('Project');
+                                clearPortfolioSearch();
+                            }}
+                        >
+                            Project
+                        </div>
                     </div>
-                    <div
-                        className={`w-full h-10 p-2 cursor-pointer rounded-sm ${selected === 'Project' ? 'bg-blue-600 text-white' : 'text-black hover:bg-gray-100'} items-center flex justify-center`}
-                        onClick={() => {
-                            setSelected('Project');
-                            clearPortfolioSearch();
-                        }}
-                    >
-                        Project
-                    </div>
-                </div>
                     {selected === 'Portfolio' && (
                         <>
                             <div className="mb-4">
@@ -432,7 +431,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                                     </div>
                                                     <div className="flex-grow">
                                                         <div className="flex flex-col items-center mt-3 space-y-3">
-                                                            {item.photo  == null || item.photo === '' ? (
+                                                            {item.photo == null || item.photo === '' ? (
                                                                 <div className="w-[100px] h-[100px] rounded-lg aspect-square bg-white border border-gray-300 flex items-center justify-center">
                                                                     <i className="fas fa-user text-gray-300 text-3xl"></i>
                                                                 </div>
@@ -762,7 +761,7 @@ export default function PortfolioManagementComponent({ portfolio, project }: { p
                                     )
                                 )}
                             </div>
-                            
+
                             <div className="flex justify-center items-center mt-2 mb-8">
                                 {!isProjectSearchActive && !isFilterApplied && hasMoreProjects && (
                                     <button
