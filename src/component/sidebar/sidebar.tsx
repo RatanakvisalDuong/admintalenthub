@@ -126,6 +126,17 @@ export default function SideBar({ onSelectTabAction }: { onSelectTabAction: (id:
                     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
             ),
+        },
+        {
+            id: 5,
+            name: "Major Management",
+            path: "/dashboard/major-management",
+            icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                </svg>
+            ),
         }
     ];
 
@@ -135,8 +146,8 @@ export default function SideBar({ onSelectTabAction }: { onSelectTabAction: (id:
                 {menuItems.map((item) => {
                     const isActive = pathname === item.path;
 
-                    // Don't render Admin Management item if user is not super admin
-                    if (item.id === 4 && session?.user.isSuperAdmin !== 1) {
+                    // Don't render Admin Management and Major Management items if user is not super admin
+                    if ((item.id === 4 || item.id === 5) && session?.user.isSuperAdmin !== 1) {
                         return null;
                     }
 
