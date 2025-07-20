@@ -56,9 +56,14 @@ export default function PortfolioPageComponent({ portfolio }: { portfolio: Portf
     }
 
     const toggleSharePortfolio = () => {
-        displaySuccessMessage("Portfolio link copied to clipboard!");
-        navigator.clipboard.writeText(`http://localhost:3000/portfolio/${portfolio.portfolio.user_id}`);
-    }
+            displaySuccessMessage("Portfolio link copied to clipboard!");
+            console.log('ID:', portfolio.portfolio.google_id);
+            if (typeof navigator !== "undefined" && navigator.clipboard) {
+                navigator.clipboard.writeText(`https://talenthub.paragoniu.app/portfolio/${portfolio.portfolio.google_id}`);
+            } else {
+                displaySuccessMessage("Clipboard API not available.");
+            }
+        }
 
     const displaySuccessMessage = (message: string) => {
         setSuccessMessage(message);

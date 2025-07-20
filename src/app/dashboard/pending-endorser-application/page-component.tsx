@@ -329,7 +329,7 @@ export default function PendingEndorserApplicationClient({
                             setDialogError('');
                         }}
                     ></div>
-                    <div className="relative bg-white rounded-lg shadow-xl w-[600px] max-h-[90vh] z-10 overflow-hidden">
+                    <div className="relative bg-white rounded-lg shadow-xl w-[600px] h-[700px] z-10 overflow-y-auto">
                         {/* Header */}
                         <div className="flex justify-between items-center border-b p-4">
                             <h2 className="text-lg font-semibold text-gray-800">Application Details</h2>
@@ -360,7 +360,7 @@ export default function PendingEndorserApplicationClient({
                         )}
 
                         {/* Body */}
-                        <div className="p-4 overflow-y-auto max-h-[calc(90vh-140px)]">
+                        <div className="p-4">
                             {detailLoading ? (
                                 <div className="flex items-center justify-center py-8">
                                     <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mr-3"></div>

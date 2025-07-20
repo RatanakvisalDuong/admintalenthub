@@ -43,7 +43,7 @@ export default function AdminManagementComponent({ admin: initialAdmin }: { admi
         setIsRemoving(true);
         try {
             const response = await axios.delete(
-                `https://talenthub.newlinkmarketing.com/api/remove_admin/${adminToRemove.id}`,
+                `https://api-talenthub.paragoniu.app/api/remove_admin/${adminToRemove.id}`,
                 {
                     headers: {
                         Authorization: `Bearer ${session?.user.accessToken}`,
