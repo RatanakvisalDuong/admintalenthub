@@ -7,7 +7,7 @@ import { Skill } from "./skill";
 export interface Portfolio {
     portfolio: {
         id: number;
-        user_id: string;
+        google_id: string;
         major: number | null;
         phone_number: string;
         about: string;
